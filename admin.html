@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biblia Sincronizada — Pastor</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icono.svg">
+<meta name="theme-color" content="#173f35">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;900&family=Montserrat:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin:0; font-family: Arial, sans-serif; background:#f4f1ea; color:#222; }
+  header { background:#173f35; color:#fff; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  header h1 { margin:0; font-size:20px; }
+  header span { font-size:13px; opacity:.85; }
+  .hdr-iglesia { background:#ffd54f; color:#173f35; font-weight:bold; padding:6px 12px; border-radius:14px; border:none; font-size:14px; cursor:pointer; }
+  .topbar { background:#fff; padding:10px 12px; display:flex; gap:10px; border-bottom:1px solid #e0ddd5; }
+  .topbar select { flex:1; padding:10px; border:1px solid #ccc; border-radius:8px; font-size:16px; }
+  .search-row { display:flex; gap:8px; padding:10px 12px; background:#fff; border-bottom:1px solid #e0ddd5; }
+  #searchInput { flex:1; padding:11px 12px; border:2px solid #ccc; border-radius:10px; font-size:17px; }
+  #searchInput:focus { border-color:#173f35; outline:none; }
+  #searchButton { border:none; border-radius:10px; width:52px; background:#173f35; color:#fff; font-size:20px; cursor:pointer; }
+  .search-info { display:none; padding:8px 12px; background:#eef4f1; color:#173f35; font-weight:bold; font-size:14px; justify-content:space-between; align-items:center; }
+  .search-info button { background:none; border:none; color:#173f35; text-decoration:underline; font-weight:bold; cursor:pointer; }
+
+  body.resaltando .tabs, body.resaltando main { display:none; }
+
+  .preview { padding:10px 12px; display:none; flex-direction:column; gap:8px; }
+  .pbox { border-radius:10px; padding:10px 12px; cursor:pointer; }
+  .pbox .pref { font-weight:bold; font-size:14px; }
+  .pbox .ptext { font-size:16px; line-height:1.4; margin-top:2px; }
+  .pbox.prev {
+    background:#b91c1c; color:#fff; text-align:center;
+    padding:16px 12px; border-radius:12px; min-height:76px;
+    box-shadow:0 2px 8px rgba(0,0,0,.25);
+  }
+  .pbox.prev:active { filter:brightness(1.15); }
+  .pbox.prev::before {
+    content:"◀◀  VOLVER"; display:block;
+    font-family:'Montserrat', Arial, sans-serif;
+    font-size:24px; font-weight:900; letter-spacing:2px; margin-bottom:4px;
+  }
+  .pbox.prev .pref { color:#ffd9d9; font-size:13px; }
+  .pbox.prev .ptext { color:#fff; font-size:14px; }
+
+  .pbox.next {
+    background:#dc2626; color:#fff; text-align:center;
+    padding:16px 12px; border-radius:12px; min-height:76px;
+    box-shadow:0 2px 8px rgba(0,0,0,.25);
+  }
+  .pbox.next:active { filter:brightness(1.15); }
+  .pbox.next::after {
+    content:"AVANZAR  ▶▶"; display:block;
+    font-family:'Montserrat', Arial, sans-serif;
+    font-size:24px; font-weight:900; letter-spacing:2px; margin-top:4px;
+  }
+  .pbox.next .pref { color:#ffd9d9; font-size:13px; }
+  .pbox.next .ptext { color:#fff; font-size:14px; }
+  .pbox.cur { background:#fff; border:2px solid #173f35; cursor:default; transition: background 0.3s, color 0.3s; }
+  .pbox.cur .pref { color:#173f35; font-size:16px; font-family:'Montserrat', Arial, sans-serif; }
+  .pbox.cur .ptext { font-size:22px; font-weight:bold; line-height:1.5; max-height:40vh; overflow-y:auto;
+                     font-family:'Inter', Arial, sans-serif; }
+  .pbox.cur.dark { background:#0e1216; color:#f2f2f2; border-color:#4a7d6d; }
+  .pbox.cur.dark .pref { color:#7fd4b5; }
+  .pbox.cur.resaltando { border-color:#b45309; }
+  .pbox.cur.resaltando::before { content:"🖍️ Elegí un color y tocá las palabras"; display:block; font-size:11px; color:#b45309; letter-spacing:.4px; margin-bottom:6px; font-weight:bold; }
+  .pbox.cur.resaltando .ptext { cursor:pointer; user-select:none; }
+  .pbox.hidden { display:none; }
+  .ptext .palabra { border-radius:3px; }
+
+  .colores { display:none; gap:10px; align-items:center; padding:2px 4px; }
+  .preview.resaltando .colores { display:flex; }
+  .cbtn { width:36px; height:36px; border-radius:50%; border:3px solid #ccc; cursor:pointer; }
+  .cbtn.sel { border-color:#173f35; box-shadow:0 0 0 2px #fff inset; }
+
+  .tabs { display:flex; background:#fff; border-bottom:2px solid #e0ddd5; position:sticky; top:0; z-index:5; }
+  .tab { flex:1; text-align:center; padding:12px 2px; font-weight:bold; font-size:13px; color:#888; cursor:pointer; border-bottom:3px solid transparent; }
+  .tab.active { color:#173f35; border-bottom-color:#173f35; }
+  .tab.disabled { color:#ccc; pointer-events:none; }
+
+  main { max-width:1000px; margin:0 auto; }
+  .tabpage { display:none; padding:10px 12px 150px; }
+  .tabpage.active { display:block; }
+
+  .btoolbar { display:flex; justify-content:flex-end; margin-bottom:6px; }
+  .mini-btn { border:none; border-radius:9px; background:#173f35; color:#fff; font-size:14px; font-weight:bold; padding:8px 14px; cursor:pointer; }
+  .legend { display:flex; flex-wrap:wrap; gap:5px 14px; padding:2px 2px 10px; font-size:11px; color:#555; }
+  .legend span { display:flex; align-items:center; gap:4px; }
+  .legend i { width:11px; height:11px; border-radius:3px; display:inline-block; }
+  .chipstrip { display:none; gap:6px; overflow-x:auto; padding:4px 2px 8px; }
+  .chipstrip.has { display:flex; }
+  .chiplabel { flex:0 0 auto; font-size:11px; color:#777; align-self:center; padding-right:2px; font-weight:bold; }
+  .chip { flex:0 0 auto; border-radius:8px; padding:8px 11px; color:#fff; font-weight:bold; font-size:13px; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,.2); }
+
+  .gr-title { grid-column: 1 / -1; font-weight:bold; color:#173f35; font-size:15px;
+              letter-spacing:1.5px; padding:10px 2px 6px; border-bottom:3px solid #d8d3c8; margin-top:6px;
+              font-family:'Montserrat', Arial, sans-serif; }
+  .gr-title.nt { color:#7b4bab; border-bottom-color:#d9c8ef; }
+  .list-title { padding:10px 14px; background:#eef4f1; color:#173f35; font-weight:bold; font-size:14px; letter-spacing:1.5px; }
+  .list-title.nt { background:#f3ecfb; color:#7b4bab; }
+
+  .bgrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(64px, 1fr)); gap:6px; }
+  .bcell { position:relative; border-radius:10px; padding:15px 2px; text-align:center; color:#fff;
+           font-weight:bold; font-size:16px; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,.28);
+           font-family:'Montserrat', Arial, sans-serif; user-select:none; }
+  .bcell:hover { filter:brightness(1.12); }
+  .bcell .bknum { position:absolute; top:3px; left:6px; font-size:9px; opacity:.5; font-family:Arial; }
+  .bcell .bkfull { display:none; font-size:9px; font-weight:normal; opacity:.9; font-family:Arial; margin-top:1px; }
+  .bcell .star { position:absolute; top:2px; right:5px; font-size:11px; color:#ffe27a; text-shadow:0 1px 2px rgba(0,0,0,.5); display:none; }
+  .bcell.fav .star { display:block; }
+  .bcell.selected { outline:3px solid #173f35; outline-offset:2px; }
+  @media (min-width: 720px) {
+    .bgrid { grid-template-columns:repeat(13, 1fr); }
+    .bcell { padding:10px 2px; }
+    .bcell .bkfull { display:block; }
+  }
+  .hint { font-size:11px; color:#888; padding:8px 2px; }
+
+  .book-row { padding:16px 14px; border-bottom:1px solid #e5e5e5; font-size:21px; color:#173f35; cursor:pointer; background:#fff; }
+  .book-row:hover { background:#f0f5f2; }
+  #bookList { display:none; }
+  #bookList.visible { display:block; border:1px solid #ddd; border-radius:10px; overflow:hidden; }
+
+  .vtoolbar { display:flex; justify-content:flex-end; margin-bottom:8px; }
+  .grid-num { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
+  .numcell { background:#e3ece7; color:#173f35; font-weight:bold; font-size:20px; text-align:center; padding:16px 0; border-radius:6px; cursor:pointer; }
+  .numcell:hover { background:#d3e2db; }
+  .numcell.selected { background:#173f35; color:#fff; }
+
+  .vlist { margin-top:12px; border:1px solid #ddd; border-radius:10px; overflow:hidden; }
+  .verse { display:flex; gap:10px; padding:12px; border-bottom:1px solid #e8e8e8; cursor:pointer; background:#fff; }
+  .verse:last-child { border-bottom:none; }
+  .verse:hover { background:#f4f7f5; }
+  .verse.selected { background:#c8e6c9; }
+  .verse.ref { display:block; }
+  .vnum { min-width:30px; font-weight:bold; color:#173f35; font-size:18px; }
+  .vtext { font-size:19px; line-height:1.5; }
+  .vtext mark { background:#ffe27a; padding:0 2px; border-radius:3px; }
+  .search-ref { font-size:15px; font-weight:bold; color:#173f35; margin-bottom:4px; display:flex; align-items:center; gap:7px;
+                font-family:'Montserrat', Arial, sans-serif; }
+  .search-ref .dot { width:11px; height:11px; border-radius:3px; display:inline-block; flex:0 0 auto; }
+  .search-ref .bn { color:#888; font-weight:normal; font-family:Arial; font-size:13px; }
+
+  .bottombar { position:fixed; bottom:0; left:0; right:0; max-width:1000px; margin:0 auto;
+               background:rgba(244,241,234,0.97); border-top:1px solid #ddd; z-index:6; }
+  .fondos-row { display:flex; gap:10px; justify-content:center; padding:8px 10px 2px; }
+  .fbtn { width:42px; height:42px; border-radius:50%; border:3px solid #ccc; cursor:pointer;
+          font-size:19px; display:flex; align-items:center; justify-content:center; background:#fff; }
+  .fbtn.sel { border-color:#173f35; }
+  .actions { display:flex; gap:10px; padding:8px 12px 10px; }
+  .actions button { border:none; border-radius:9px; padding:12px 18px; font-size:16px; font-weight:bold; cursor:pointer; }
+  #editVerseButton { background:#b45309; color:#fff; flex:1; }
+  #editVerseButton.resaltando { background:#7a5c00; }
+  #editVerseButton:disabled { background:#ccc; cursor:not-allowed; }
+  #clearButton { background:#ddd; color:#222; }
+
+  .status { padding:6px 12px 4px; font-size:13px; color:#666; display:flex; gap:12px; align-items:center; }
+  .status .lockbtn { margin-left:auto; background:none; border:none; color:#666; font-size:13px; cursor:pointer; text-decoration:underline; }
+
+  /* ===== CANDADO ===== */
+  #lockOverlay {
+    position:fixed; inset:0; z-index:100; background:#173f35;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  #lockOverlay.hidden { display:none; }
+  .lock-card { background:#fff; border-radius:16px; padding:30px 24px; max-width:360px; width:100%; text-align:center; }
+  .lock-title { font-family:'Montserrat', Arial, sans-serif; font-weight:900; font-size:22px; color:#173f35; margin-bottom:8px; }
+  .lock-card p { color:#666; font-size:15px; margin:0 0 16px; }
+  #lockInput {
+    width:100%; padding:14px; font-size:20px; text-align:center; letter-spacing:3px;
+    border:2px solid #ccc; border-radius:10px; outline:none; box-sizing:border-box;
+  }
+  #lockInput:focus { border-color:#173f35; }
+  #lockBtn {
+    width:100%; margin-top:14px; padding:14px; border:none; border-radius:10px;
+    background:#173f35; color:#fff; font-size:18px; font-weight:bold; cursor:pointer;
+  }
+  .lock-msg { margin-top:10px; color:#b91c1c; font-size:14px; font-weight:bold; min-height:18px; }
+
+  /* ===== GESTOR DE IGLESIAS ===== */
+  #igOverlay {
+    position:fixed; inset:0; z-index:110; background:rgba(23,63,53,0.97);
+    overflow-y:auto; padding:20px;
+  }
+  #igOverlay.hidden { display:none; }
+  .ig-card { background:#fff; border-radius:16px; padding:24px 18px; max-width:440px; margin:20px auto; }
+  .ig-card p { color:#666; font-size:15px; margin:0 0 16px; }
+  .ig-item { display:flex; align-items:center; gap:8px; border:2px solid #e0ddd5; border-radius:12px; padding:12px; margin-bottom:8px; background:#fff; }
+  .ig-item.activo { border-color:#173f35; background:#eef4f1; }
+  .ig-nombre { flex:1; font-weight:bold; color:#173f35; font-size:17px; cursor:pointer; }
+  .ig-id { font-size:11px; color:#999; font-family:monospace; }
+  .ig-mini { border:none; background:#f0ede6; border-radius:8px; padding:8px 10px; cursor:pointer; font-size:15px; }
+  #igAgregar { width:100%; margin-top:6px; padding:13px; border:none; border-radius:10px;
+               background:#173f35; color:#fff; font-weight:bold; font-size:16px; cursor:pointer; }
+  #igAgregar:disabled { background:#ccc; cursor:not-allowed; }
+  #igCerrar { width:100%; margin-top:8px; padding:12px; border:none; border-radius:10px;
+              background:#ddd; font-weight:bold; cursor:pointer; }
+  #igCerrar.hidden { display:none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>📖 Biblia Sincronizada</h1>
+  <span><button id="btnIglesia" class="hdr-iglesia">⛪ <span id="salaTag">—</span> ▾</button></span>
+</header>
+
+<!-- ===== GESTOR DE IGLESIAS ===== -->
+<div id="igOverlay" class="hidden">
+  <div class="ig-card">
+    <div class="lock-title">⛪ Mis iglesias</div>
+    <p>Elegí dónde vas a predicar. El link de proyección de cada iglesia se copia para pasárselo a esa congregación.</p>
+    <div id="igLista"></div>
+    <button id="igAgregar">+ Agregar iglesia (máximo 7)</button>
+    <button id="igCerrar" class="hidden">✕ Seguir en esta iglesia</button>
+  </div>
+</div>
+
+<!-- ===== CANDADO ===== -->
+<div id="lockOverlay" class="hidden">
+  <div class="lock-card">
+    <div class="lock-title">🔒 Biblia Sincronizada</div>
+    <p>Ingresá el código que te dio el coordinador para poder proyectar.</p>
+    <input id="lockInput" type="password" autocomplete="off" placeholder="Código">
+    <button id="lockBtn">ENTRAR</button>
+    <div class="lock-msg" id="lockMsg"></div>
+  </div>
+</div>
+
+<div class="topbar">
+  <select id="version"><option value="">Versión…</option></select>
+</div>
+
+<div class="search-row">
+  <input id="searchInput" type="search" placeholder="🔍 Buscar palabra o frase…" autocomplete="off">
+  <button id="searchButton">🔍</button>
+</div>
+<div class="search-info" id="searchInfo">
+  <span id="searchInfoTexto"></span>
+  <button id="clearSearchButton">✕ Volver</button>
+</div>
+
+<div class="preview" id="preview">
+  <div class="pbox prev hidden" id="prevBox"></div>
+  <div class="pbox cur" id="curBox"><div class="pref" id="curRef"></div><div class="ptext" id="curText"></div></div>
+  <div class="colores" id="coloresRow"></div>
+  <div class="pbox next hidden" id="nextBox"></div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="libro">LIBRO</div>
+  <div class="tab disabled" data-tab="capitulo">CAPÍTULO</div>
+  <div class="tab disabled" data-tab="versiculo">VERSÍCULO</div>
+  <div class="tab disabled" data-tab="busqueda">BUSCAR</div>
+</div>
+
+<main>
+  <section class="tabpage active" id="page-libro">
+    <div class="btoolbar">
+      <button id="bookViewBtn" class="mini-btn">📋 Lista</button>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="chipstrip" id="favStrip"></div>
+    <div class="chipstrip" id="histStrip"></div>
+    <div class="bgrid" id="bookGrid"></div>
+    <div class="hint">Tocá un libro para ver sus capítulos · Mantené presionado (o clic derecho) para ⭐ favorito</div>
+    <div id="bookList"></div>
+  </section>
+  <section class="tabpage" id="page-capitulo">
+    <div class="grid-num" id="chapterGrid"></div>
+  </section>
+  <section class="tabpage" id="page-versiculo">
+    <div class="vtoolbar">
+      <button id="dotsButton" class="mini-btn">⋮ Lista</button>
+    </div>
+    <div class="grid-num" id="verseGrid"></div>
+    <div class="vlist" id="verseList" style="display:none;"></div>
+  </section>
+  <section class="tabpage" id="page-busqueda">
+    <div class="vlist" id="resultList" style="margin-top:0;"></div>
+  </section>
+</main>
+
+<div class="bottombar">
+  <div class="fondos-row" id="fondosRow"></div>
+  <div class="actions">
+    <button id="editVerseButton" disabled>🖍️ Resaltar</button>
+    <button id="clearButton">Limpiar</button>
+  </div>
+</div>
+
+<div class="status">
+  WebSocket: <span id="wsStatus">Conectando...</span>
+  <button class="lockbtn" id="cambiarCodigoBtn">🔒 cambiar código</button>
+</div>
+
+<script>
+  const versionSelect = document.getElementById("version");
+  const bookGrid = document.getElementById("bookGrid");
+  const bookList = document.getElementById("bookList");
+  const bookViewBtn = document.getElementById("bookViewBtn");
+  const favStrip = document.getElementById("favStrip");
+  const histStrip = document.getElementById("histStrip");
+  const chapterGrid = document.getElementById("chapterGrid");
+  const verseGrid = document.getElementById("verseGrid");
+  const verseList = document.getElementById("verseList");
+  const dotsButton = document.getElementById("dotsButton");
+  const resultList = document.getElementById("resultList");
+  const preview = document.getElementById("preview");
+  const prevBox = document.getElementById("prevBox");
+  const nextBox = document.getElementById("nextBox");
+  const curBox = document.getElementById("curBox");
+  const curRef = document.getElementById("curRef");
+  const curText = document.getElementById("curText");
+  const coloresRow = document.getElementById("coloresRow");
+  const fondosRow = document.getElementById("fondosRow");
+  const searchInput = document.getElementById("searchInput");
+  const searchButton = document.getElementById("searchButton");
+  const searchInfo = document.getElementById("searchInfo");
+  const searchInfoTexto = document.getElementById("searchInfoTexto");
+  const clearSearchButton = document.getElementById("clearSearchButton");
+  const editVerseButton = document.getElementById("editVerseButton");
+  const clearButton = document.getElementById("clearButton");
+  const wsStatus = document.getElementById("wsStatus");
+  const lockOverlay = document.getElementById("lockOverlay");
+  const lockInput = document.getElementById("lockInput");
+  const lockBtn = document.getElementById("lockBtn");
+  const lockMsg = document.getElementById("lockMsg");
+  const cambiarCodigoBtn = document.getElementById("cambiarCodigoBtn");
+  const btnIglesia = document.getElementById("btnIglesia");
+  const salaTag = document.getElementById("salaTag");
+  const igOverlay = document.getElementById("igOverlay");
+  const igLista = document.getElementById("igLista");
+  const igAgregar = document.getElementById("igAgregar");
+  const igCerrar = document.getElementById("igCerrar");
+
+  const UMBRAL_EST = 240;
+  const COLORES = ["#ffff00", "#8aff8a", "#7cdcff", "#ff9ee8", "#ffc966"];
+  const NOMBRES = ["Amarillo", "Verde", "Celeste", "Rosa", "Naranja"];
+  let colorActual = COLORES[0];
+
+  const FONDOS = [
+    { id:"claro",         emoji:"☀️", label:"Blanco",        dark:false },
+    { id:"doodle-claro",  emoji:"🕊️", label:"Doodle claro",  dark:false },
+    { id:"sepia",         emoji:"📜", label:"Sepia",         dark:false },
+    { id:"oscuro",        emoji:"🌙", label:"Oscuro",        dark:true },
+    { id:"doodle-oscuro", emoji:"🌌", label:"Doodle oscuro", dark:true },
+    { id:"azul",          emoji:"🌃", label:"Azul noche",    dark:true }
+  ];
+
+  const SECCIONES = [
+    { name:"Ley",               color:"#b35c1e", from:1,  to:5  },
+    { name:"Historia",          color:"#d68438", from:6,  to:17 },
+    { name:"Poéticos",          color:"#2f8f46", from:18, to:22 },
+    { name:"Profetas Mayores",  color:"#7b4bab", from:23, to:27 },
+    { name:"Profetas Menores",  color:"#4f7ecb", from:28, to:39 },
+    { name:"Evangelios",        color:"#c0392b", from:40, to:43 },
+    { name:"Hechos",            color:"#d16a9e", from:44, to:44 },
+    { name:"Cartas de Pablo",   color:"#4557c0", from:45, to:57 },
+    { name:"Cartas Generales",  color:"#2a9d8f", from:58, to:65 },
+    { name:"Apocalipsis",       color:"#8e44ad", from:66, to:66 }
+  ];
+  const ABBR = ["Gn","Ex","Lv","Nm","Dt","Js","Jz","Rt","1S","2S","1R","2R","1Cr","2Cr","Esd","Neh","Est","Job","Sal","Pr","Ec","Ct","Is","Jr","Lm","Ez","Dn","Os","Jl","Am","Ob","Jon","Mi","Nah","Hab","Sof","Hag","Zac","Mal","Mt","Mr","Lc","Jn","Hch","Ro","1Co","2Co","Gá","Ef","Fil","Col","1Ts","2Ts","1Ti","2Ti","Tit","Flm","Heb","Stg","1P","2P","1Jn","2Jn","3Jn","Jud","Ap"];
+  function seccionDe(n) {
+    return SECCIONES.find(s => n >= s.from && n <= s.to) || { name:"Libro", color:"#607d8b" };
+  }
+  function abreviar(n) {
+    return (n >= 1 && n <= 66) ? ABBR[n-1] : "?";
+  }
+
+  let ws = null;
+  let playlist = [];
+  let curIdx = -1;
+  let curPart = 0;
+  let partesInfo = null;
+  let selectedBookName = "";
+  let currentBookNumber = null;
+  let ultimoTab = "libro";
+  let modoResaltar = false;
+  let qBusqueda = "";
+  let fondoActual = "claro";
+  let booksByNumber = {};
+  let favoritos = [];
+  let historial = [];
+  try { favoritos = JSON.parse(localStorage.getItem("bibFav") || "[]"); } catch(e) { favoritos = []; }
+  try { historial = JSON.parse(localStorage.getItem("bibHist") || "[]"); } catch(e) { historial = []; }
+
+  // ============================================================
+  // GESTOR DE IGLESIAS DEL PASTOR (hasta 7, con nombre editable)
+  // ============================================================
+  let iglesias = [];
+  let iglesiaActual = "";
+  try { iglesias = JSON.parse(localStorage.getItem("pastorIglesias") || "[]"); } catch(e) { iglesias = []; }
+  try { iglesiaActual = localStorage.getItem("pastorIglesiaActual") || ""; } catch(e) {}
+
+  let salaActual = "";
+  const urlSala = new URLSearchParams(location.search).get("sala");
+  if (urlSala) {
+    // si le pasan un link directo con ?sala=xxx, se respeta
+    salaActual = urlSala.toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 20);
+    iglesiaActual = salaActual;
+  }
+
+  function guardarIglesias() {
+    try {
+      localStorage.setItem("pastorIglesias", JSON.stringify(iglesias));
+      localStorage.setItem("pastorIglesiaActual", iglesiaActual);
+    } catch(e) {}
+  }
+  function nombreIglesia(id) {
+    const g = iglesias.find(x => x.id === id);
+    return g ? g.nombre : (id || "—").toUpperCase();
+  }
+  function actualizarTagIglesia() {
+    salaTag.textContent = iglesiaActual ? nombreIglesia(iglesiaActual) : "—";
+  }
+
+  function abrirOverlayIglesias(primeraVez) {
+    pintarListaIglesias();
+    igAgregar.disabled = iglesias.length >= 7;
+    igCerrar.classList.toggle("hidden", primeraVez || !iglesiaActual);
+    igOverlay.classList.remove("hidden");
+  }
+  function pintarListaIglesias() {
+    igLista.innerHTML = "";
+    iglesias.forEach(g => {
+      const div = document.createElement("div");
+      div.className = "ig-item" + (g.id === iglesiaActual ? " activo" : "");
+      div.innerHTML = `
+        <div class="ig-nombre" title="Tocá para predicar aquí">${escapeHtml(g.nombre)}</div>
+        <div class="ig-id">${g.id}</div>
+        <button class="ig-mini" data-acc="link" title="Compartir / copiar link de proyección">📋</button>
+        <button class="ig-mini" data-acc="renom" title="Cambiar nombre">✏️</button>
+        <button class="ig-mini" data-acc="del" title="Eliminar">🗑️</button>`;
+      div.querySelector(".ig-nombre").addEventListener("click", () => elegirIglesia(g.id));
+      div.querySelector('[data-acc="link"]').addEventListener("click", (e) => { e.stopPropagation(); compartirLink(g); });
+      div.querySelector('[data-acc="renom"]').addEventListener("click", (e) => { e.stopPropagation(); renombrarIglesia(g.id); });
+      div.querySelector('[data-acc="del"]').addEventListener("click", (e) => { e.stopPropagation(); eliminarIglesia(g.id); });
+      igLista.appendChild(div);
+    });
+  }
+  function elegirIglesia(id) {
+    iglesiaActual = id;
+    guardarIglesias();
+    location.reload(); // reinicia limpio conectado a la iglesia elegida
+  }
+  async function compartirLink(g) {
+    const url = location.origin + "/proyeccion.html?sala=" + g.id;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: g.nombre, text: "Link de proyección de " + g.nombre, url: url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        alert("Link copiado. Enviáselo a esa iglesia:\n\n" + url);
+      }
+    } catch(e) {
+      prompt("Copiá este link y compartilo:", url);
+    }
+  }
+  function renombrarIglesia(id) {
+    const g = iglesias.find(x => x.id === id);
+    if (!g) return;
+    const nuevo = prompt("Nombre de la iglesia:", g.nombre);
+    if (nuevo && nuevo.trim()) {
+      g.nombre = nuevo.trim().slice(0, 40);
+      guardarIglesias();
+      pintarListaIglesias();
+      actualizarTagIglesia();
+    }
+  }
+  function eliminarIglesia(id) {
+    if (!confirm("¿Eliminar esta iglesia de tu lista?")) return;
+    iglesias = iglesias.filter(x => x.id !== id);
+    if (iglesiaActual === id) {
+      iglesiaActual = iglesias.length ? iglesias[0].id : "";
+      guardarIglesias();
+      location.reload();
+      return;
+    }
+    guardarIglesias();
+    pintarListaIglesias();
+  }
+  igAgregar.addEventListener("click", () => {
+    if (iglesias.length >= 7) return;
+    const id = "i" + Math.random().toString(36).slice(2, 6);
+    iglesias.push({ id: id, nombre: "Iglesia " + (iglesias.length + 1) });
+    guardarIglesias();
+    pintarListaIglesias();
+    igAgregar.disabled = iglesias.length >= 7;
+  });
+  igCerrar.addEventListener("click", () => igOverlay.classList.add("hidden"));
+  btnIglesia.addEventListener("click", () => abrirOverlayIglesias(false));
+
+  // ===== CANDADO =====
+  let codigoGuardado = "";
+  try { codigoGuardado = localStorage.getItem("codAcceso") || ""; } catch(e) {}
+  let esperandoAuth = false;
+
+  function mostrarLock(msg) {
+    lockMsg.textContent = msg || "";
+    lockOverlay.classList.remove("hidden");
+    setTimeout(() => lockInput.focus(), 100);
+  }
+  function ocultarLock() {
+    lockOverlay.classList.add("hidden");
+    lockInput.value = "";
+    lockMsg.textContent = "";
+  }
+  function enviarAuth() {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      esperandoAuth = true;
+      ws.send(JSON.stringify({ type: "auth", codigo: codigoGuardado }));
+    }
+  }
+  lockBtn.addEventListener("click", () => {
+    const c = lockInput.value.trim();
+    if (!c) { lockMsg.textContent = "Escribí el código."; return; }
+    codigoGuardado = c;
+    try { localStorage.setItem("codAcceso", c); } catch(e) {}
+    enviarAuth();
+  });
+  lockInput.addEventListener("keydown", (e) => { if (e.key === "Enter") lockBtn.click(); });
+  cambiarCodigoBtn.addEventListener("click", () => {
+    codigoGuardado = "";
+    try { localStorage.removeItem("codAcceso"); } catch(e) {}
+    mostrarLock("Si el coordinador cambió el código, ingresá el nuevo.");
+  });
+
+  function escapeHtml(t) {
+    return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+  function resaltarQ(texto, q) {
+    const t = escapeHtml(texto);
+    if (!q) return t;
+    const re = new RegExp("(" + q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&") + ")", "gi");
+    return t.replace(re, "<mark>$1</mark>");
+  }
+
+  // ---------- WebSocket ----------
+  function connectWebSocket() {
+    const p = location.protocol === "https:" ? "wss:" : "ws:";
+    ws = new WebSocket(`${p}//${location.host}`);
+    ws.addEventListener("open", () => {
+      wsStatus.textContent = "Conectado";
+      ws.send(JSON.stringify({ type: "join", sala: salaActual }));
+      enviarAuth();
+      try {
+        const f = localStorage.getItem("adminFondo");
+        if (f) enviarFondo(f);
+      } catch(e) {}
+    });
+    ws.addEventListener("close", () => { wsStatus.textContent = "Desconectado"; setTimeout(connectWebSocket, 2000); });
+    ws.addEventListener("error", () => { wsStatus.textContent = "Error"; });
+    ws.addEventListener("message", (ev) => {
+      try {
+        const data = JSON.parse(ev.data);
+        if (data.type === "connected") { document.getElementById("connectedCount").textContent = data.count; return; }
+        if (data.type === "auth-ok") { esperandoAuth = false; ocultarLock(); return; }
+        if (data.type === "auth-error") {
+          esperandoAuth = false;
+          codigoGuardado = "";
+          try { localStorage.removeItem("codAcceso"); } catch(e) {}
+          mostrarLock("Código incorrecto o vencido. Pedile el nuevo al coordinador.");
+          return;
+        }
+        if (data.type === "projection") {
+          const d = data.data || {};
+          if (d.type === "parts-info" && curIdx >= 0) {
+            const v = playlist[curIdx];
+            if (v && Number(d.verse) === Number(v.verse) && Number(d.chapter) === Number(v.chapter)) {
+              partesInfo = { count: d.count, ranges: d.ranges || null };
+              curPart = Math.min((d.current || 1) - 1, d.count - 1);
+              actualizarPreview(); marcarSeleccion();
+            }
+          }
+        }
+      } catch(e) {}
+    });
+  }
+
+  function enviarFondo(id) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: "project", reference: "", data: { type: "theme", fondo: id } }));
+    }
+  }
+  function setFondo(id, avisar) {
+    const f = FONDOS.find(x => x.id === id) || FONDOS[0];
+    fondoActual = f.id;
+    curBox.classList.toggle("dark", f.dark);
+    document.querySelectorAll(".fbtn").forEach(b => b.classList.toggle("sel", b.dataset.f === f.id));
+    try { localStorage.setItem("adminFondo", f.id); } catch (e) {}
+    if (avisar) enviarFondo(f.id);
+  }
+  function pintarFondos() {
+    fondosRow.innerHTML = "";
+    FONDOS.forEach(f => {
+      const b = document.createElement("div");
+      b.className = "fbtn" + (f.id === fondoActual ? " sel" : "");
+      b.dataset.f = f.id;
+      b.textContent = f.emoji;
+      b.title = f.label;
+      b.addEventListener("click", () => setFondo(f.id, true));
+      fondosRow.appendChild(b);
+    });
+  }
+  try { setFondo(localStorage.getItem("adminFondo") || "claro", false); } catch(e) { setFondo("claro", false); }
+  pintarFondos();
+
+  function pintarPaleta() {
+    coloresRow.innerHTML = "";
+    COLORES.forEach((c, i) => {
+      const b = document.createElement("div");
+      b.className = "cbtn" + (c === colorActual ? " sel" : "");
+      b.style.background = c;
+      b.title = NOMBRES[i];
+      b.addEventListener("click", () => { colorActual = c; pintarPaleta(); });
+      coloresRow.appendChild(b);
+    });
+  }
+  pintarPaleta();
+
+  function salirModoResaltar() {
+    if (!modoResaltar) return;
+    modoResaltar = false;
+    editVerseButton.classList.remove("resaltando");
+    editVerseButton.textContent = "🖍️ Resaltar";
+    preview.classList.remove("resaltando");
+    document.body.classList.remove("resaltando");
+  }
+
+  function partirEstimado(words) {
+    const total = words.reduce((a,w)=>a+w.t.length+1,0);
+    if (total <= UMBRAL_EST || words.length < 2) return [[0, words.length]];
+    let acc=0, corte=Math.floor(words.length/2);
+    for (let i=0;i<words.length;i++){ acc+=words[i].t.length+1; if (acc>=total/2){corte=i;break;} }
+    corte=Math.max(1,Math.min(corte,words.length-1));
+    return [[0,corte],[corte,words.length]];
+  }
+  function rangesDe(it) {
+    return (partesInfo && partesInfo.count > 1 && partesInfo.ranges) ? partesInfo.ranges : partirEstimado(it.words);
+  }
+  function textoParte(it, partIdx) {
+    const ranges = rangesDe(it);
+    if (partIdx < 0 || partIdx >= ranges.length) return "";
+    const [a,b] = ranges[partIdx];
+    let s = it.words.slice(a,b).map(w=>w.t).join(" ");
+    if (partIdx > 0) s = "… " + s;
+    if (partIdx < ranges.length-1) s = s + " …";
+    return s;
+  }
+
+  function proyectar(idx, part) {
+    if (idx < 0 || idx >= playlist.length) return;
+    if (esperandoAuth || !lockOverlay.classList.contains("hidden")) return;
+    curIdx = idx;
+    curPart = Math.max(0, part || 0);
+    partesInfo = null;
+    salirModoResaltar();
+    const it = playlist[curIdx];
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: "project",
+        reference: it.referencia,
+        data: {
+          type: "verse",
+          words: it.words,
+          part: curPart,
+          version: it.version, bookName: it.bookName,
+          chapter: it.chapter, verse: it.verse
+        }
+      }));
+    }
+    actualizarPreview(); marcarSeleccion();
+  }
+
+  function actualizarPreview() {
+    if (curIdx < 0) { preview.style.display = "none"; editVerseButton.disabled = true; return; }
+    preview.style.display = "flex";
+    preview.classList.toggle("resaltando", modoResaltar);
+    const it = playlist[curIdx];
+    const ranges = rangesDe(it);
+    const nP = partesInfo ? partesInfo.count : ranges.length;
+    curRef.textContent = it.referencia +
+      (nP > 1 ? ` (parte ${curPart+1} de ${nP})` : "") +
+      " — " + it.version;
+
+    if (modoResaltar) {
+      curBox.classList.add("resaltando");
+      curText.innerHTML = it.words.map((w,i) => {
+        const st = w.h ? ` style="background-color:${w.h}"` : "";
+        return `<span class="palabra${w.h ? " resaltada" : ""}" data-w="${i}"${st}>${escapeHtml(w.t)}</span>`;
+      }).join(" ");
+    } else {
+      curBox.classList.remove("resaltando");
+      curText.textContent = textoParte(it, curPart);
+    }
+
+    if (modoResaltar) {
+      prevBox.classList.add("hidden");
+      nextBox.classList.add("hidden");
+    } else {
+      if (curPart > 0) {
+        prevBox.classList.remove("hidden");
+        prevBox.innerHTML = `<div class="pref">${escapeHtml(it.referencia)} (parte ${curPart})</div><div class="ptext">${escapeHtml(textoParte(it, curPart-1))}</div>`;
+      } else if (curIdx > 0) {
+        const p = playlist[curIdx-1];
+        const t = textoParte(p, 0);
+        prevBox.classList.remove("hidden");
+        prevBox.innerHTML = `<div class="pref">${escapeHtml(p.referencia)}</div><div class="ptext">${escapeHtml(t.length>90 ? t.slice(0,90)+"…" : t)}</div>`;
+      } else prevBox.classList.add("hidden");
+
+      if (curPart < nP - 1) {
+        nextBox.classList.remove("hidden");
+        nextBox.innerHTML = `<div class="pref">${escapeHtml(it.referencia)} (parte ${curPart+2})</div><div class="ptext">${escapeHtml(textoParte(it, curPart+1))}</div>`;
+      } else if (curIdx < playlist.length-1) {
+        const n = playlist[curIdx+1];
+        const t = textoParte(n, 0);
+        nextBox.classList.remove("hidden");
+        nextBox.innerHTML = `<div class="pref">${escapeHtml(n.referencia)}</div><div class="ptext">${escapeHtml(t.length>90 ? t.slice(0,90)+"…" : t)}</div>`;
+      } else nextBox.classList.add("hidden");
+    }
+
+    editVerseButton.disabled = false;
+  }
+
+  prevBox.addEventListener("click", () => {
+    if (curIdx < 0) return;
+    if (curPart > 0) proyectar(curIdx, curPart - 1);
+    else if (curIdx > 0) proyectar(curIdx - 1, 0);
+  });
+  nextBox.addEventListener("click", () => {
+    if (curIdx < 0) return;
+    const nP = partesInfo ? partesInfo.count : 1;
+    if (curPart < nP - 1) proyectar(curIdx, curPart + 1);
+    else if (curIdx < playlist.length - 1) proyectar(curIdx + 1, 0);
+  });
+
+  editVerseButton.addEventListener("click", () => {
+    if (curIdx < 0) return;
+    modoResaltar = !modoResaltar;
+    editVerseButton.classList.toggle("resaltando", modoResaltar);
+    editVerseButton.textContent = modoResaltar ? "✕ Terminar resaltado" : "🖍️ Resaltar";
+    const it = playlist[curIdx];
+    if (modoResaltar) {
+      document.body.classList.add("resaltando");
+      window.scrollTo(0, 0);
+      it.words = it.words.map(w => ({ t: w.t, h: "" }));
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: "project",
+          reference: it.referencia,
+          data: { type: "verse", words: it.words, part: curPart,
+                  version: it.version, bookName: it.bookName,
+                  chapter: it.chapter, verse: it.verse }
+        }));
+      }
+    }
+    actualizarPreview();
+  });
+
+  curText.addEventListener("click", (e) => {
+    if (!modoResaltar || curIdx < 0) return;
+    const sp = e.target.closest(".palabra");
+    if (!sp) return;
+    const i = Number(sp.dataset.w);
+    const w = playlist[curIdx].words[i];
+    if (w.h) {
+      w.h = "";
+      sp.classList.remove("resaltada");
+      sp.style.backgroundColor = "";
+    } else {
+      w.h = colorActual;
+      sp.classList.add("resaltada");
+      sp.style.backgroundColor = colorActual;
+    }
+    const it = playlist[curIdx];
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: "project",
+        reference: it.referencia,
+        data: { type: "verse", words: it.words, part: curPart,
+                version: it.version, bookName: it.bookName,
+                chapter: it.chapter, verse: it.verse }
+      }));
+    }
+  });
+
+  // ================= LIBROS =================
+  function guardarFavHist() {
+    try {
+      localStorage.setItem("bibFav", JSON.stringify(favoritos));
+      localStorage.setItem("bibHist", JSON.stringify(historial));
+    } catch(e) {}
+  }
+  function pintarChip(strip, label, lista, alTocar) {
+    strip.innerHTML = "";
+    if (!lista.length) { strip.classList.remove("has"); return; }
+    strip.classList.add("has");
+    const l = document.createElement("span");
+    l.className = "chiplabel";
+    l.textContent = label;
+    strip.appendChild(l);
+    lista.forEach(bk => {
+      const c = document.createElement("div");
+      c.className = "chip";
+      c.style.background = seccionDe(bk.n).color;
+      c.textContent = abreviar(bk.n);
+      c.title = bk.name;
+      c.addEventListener("click", () => alTocar(bk));
+      strip.appendChild(c);
+    });
+  }
+  function pintarFranjas() {
+    pintarChip(favStrip, "★", favoritos, (bk) => abrirLibro(bk.n, bk.name));
+    pintarChip(histStrip, "🕘", historial, (bk) => abrirLibro(bk.n, bk.name));
+  }
+  function toggleFavorito(n, name) {
+    const i = favoritos.findIndex(f => f.n === n);
+    if (i >= 0) favoritos.splice(i, 1);
+    else favoritos.unshift({ n: n, name: name });
+    if (favoritos.length > 10) favoritos.pop();
+    guardarFavHist(); pintarFranjas();
+    document.querySelectorAll(`.bcell[data-bn="${n}"]`).forEach(c => c.classList.toggle("fav", favoritos.some(f => f.n === n)));
+  }
+  function agregarHistorial(n, name) {
+    historial = historial.filter(h => h.n !== n);
+    historial.unshift({ n: n, name: name });
+    if (historial.length > 6) historial.pop();
+    guardarFavHist(); pintarFranjas();
+  }
+
+  function pintarLeyenda() {
+    const leg = document.getElementById("legend");
+    leg.innerHTML = "";
+    SECCIONES.forEach(s => {
+      const sp = document.createElement("span");
+      sp.innerHTML = `<i style="background:${s.color}"></i>${s.name}`;
+      leg.appendChild(sp);
+    });
+  }
+  pintarLeyenda();
+
+  function abrirLibro(num, name) {
+    elegirLibro({ book_number: num, book_name: name });
+  }
+
+  async function cargarVersiones() {
+    const r = await fetch("./api/versions");
+    const vs = await r.json();
+    versionSelect.innerHTML = '<option value="">Versión…</option>';
+    vs.forEach(v => {
+      const o = document.createElement("option");
+      o.value = v; o.textContent = v;
+      versionSelect.appendChild(o);
+    });
+    const defecto = vs.find(v => /1960/.test(v)) || vs[0];
+    if (defecto) {
+      versionSelect.value = defecto;
+      cargarLibros();
+    }
+  }
+
+  async function cargarLibros() {
+    const r = await fetch("./api/books?version=" + encodeURIComponent(versionSelect.value));
+    const books = await r.json();
+    booksByNumber = {};
+    books.forEach(b => { booksByNumber[b.book_number] = b.book_name; });
+
+    bookGrid.innerHTML = "";
+    const tAt = document.createElement("div");
+    tAt.className = "gr-title";
+    tAt.textContent = "✝️ ANTIGUO TESTAMENTO";
+    bookGrid.appendChild(tAt);
+
+    books.forEach(b => {
+      if (b.book_number === 40) {
+        const tNt = document.createElement("div");
+        tNt.className = "gr-title nt";
+        tNt.textContent = "✝️ NUEVO TESTAMENTO";
+        bookGrid.appendChild(tNt);
+      }
+      const s = seccionDe(b.book_number);
+      const d = document.createElement("div");
+      d.className = "bcell" + (favoritos.some(f => f.n === b.book_number) ? " fav" : "");
+      d.dataset.bn = b.book_number;
+      d.style.background = s.color;
+      d.title = b.book_name + " — " + s.name;
+      d.innerHTML = `<span class="bknum">${b.book_number}</span>${escapeHtml(abreviar(b.book_number))}<span class="bkfull">${escapeHtml(b.book_name)}</span><span class="star">★</span>`;
+      let pressTimer = null, longPress = false;
+      d.addEventListener("touchstart", () => {
+        longPress = false;
+        pressTimer = setTimeout(() => { longPress = true; toggleFavorito(b.book_number, b.book_name); }, 550);
+      }, { passive: true });
+      d.addEventListener("touchend", () => clearTimeout(pressTimer));
+      d.addEventListener("touchmove", () => clearTimeout(pressTimer));
+      d.addEventListener("contextmenu", (e) => { e.preventDefault(); toggleFavorito(b.book_number, b.book_name); });
+      d.addEventListener("click", () => {
+        if (longPress) { longPress = false; return; }
+        elegirLibro(b);
+      });
+      bookGrid.appendChild(d);
+    });
+
+    bookList.innerHTML = "";
+    let tL = document.createElement("div");
+    tL.className = "list-title";
+    tL.textContent = "✝️ ANTIGUO TESTAMENTO";
+    bookList.appendChild(tL);
+    books.forEach(b => {
+      if (b.book_number === 40) {
+        tL = document.createElement("div");
+        tL.className = "list-title nt";
+        tL.textContent = "✝️ NUEVO TESTAMENTO";
+        bookList.appendChild(tL);
+      }
+      const d = document.createElement("div");
+      d.className = "book-row";
+      const s = seccionDe(b.book_number);
+      d.innerHTML = `<span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:${s.color};margin-right:8px;"></span>${escapeHtml(b.book_name)}`;
+      d.addEventListener("click", () => elegirLibro(b));
+      bookList.appendChild(d);
+    });
+    pintarFranjas();
+  }
+
+  async function elegirLibro(b) {
+    selectedBookName = b.book_name;
+    currentBookNumber = b.book_number;
+    agregarHistorial(b.book_number, b.book_name);
+    document.querySelectorAll(".bcell").forEach(c => c.classList.toggle("selected", Number(c.dataset.bn) === b.book_number));
+    tabEstado("capitulo", true);
+    activarTab("capitulo");
+    chapterGrid.innerHTML = '<div style="color:#999;padding:10px;">Cargando…</div>';
+    const r = await fetch(`./api/chapters?version=${encodeURIComponent(versionSelect.value)}&book=${b.book_number}`);
+    const caps = await r.json();
+    chapterGrid.innerHTML = "";
+    caps.forEach(c => {
+      const cell = document.createElement("div");
+      cell.className = "numcell";
+      cell.textContent = c;
+      cell.addEventListener("click", () => elegirCapitulo(c, cell));
+      chapterGrid.appendChild(cell);
+    });
+  }
+
+  bookViewBtn.addEventListener("click", () => {
+    const enLista = bookList.classList.toggle("visible");
+    bookGrid.style.display = enLista ? "none" : "grid";
+    bookViewBtn.textContent = enLista ? "🎨 Cuadrícula" : "📋 Lista";
+  });
+
+  async function elegirCapitulo(c, cell) {
+    chapterGrid.querySelectorAll(".numcell").forEach(e => e.classList.remove("selected"));
+    cell.classList.add("selected");
+    const r = await fetch(`./api/verses?version=${encodeURIComponent(versionSelect.value)}&book=${currentBookNumber}&chapter=${c}`);
+    const verses = await r.json();
+
+    playlist = verses.map(v => ({
+      referencia: `${selectedBookName} ${c}:${v.verse}`,
+      version: versionSelect.value,
+      bookName: selectedBookName, bookNumber: currentBookNumber,
+      chapter: c, verse: v.verse,
+      words: String(v.text).replace(/\s+/g," ").trim().split(" ").filter(Boolean).map(t => ({ t: t, h: "" }))
+    }));
+    partesInfo = null;
+    verGrilla();
+
+    const maxV = Math.max(...verses.map(v => v.verse));
+    verseGrid.innerHTML = "";
+    for (let n = 1; n <= maxV; n++) {
+      const cellv = document.createElement("div");
+      cellv.className = "numcell";
+      cellv.dataset.v = n;
+      cellv.textContent = n;
+      cellv.addEventListener("click", () => {
+        const idx = playlist.findIndex(it => it.verse === n);
+        if (idx < 0) return;
+        proyectar(idx, 0);
+      });
+      verseGrid.appendChild(cellv);
+    }
+    pintarLista(verseList, "", false);
+    tabEstado("versiculo", true);
+    activarTab("versiculo");
+  }
+
+  function pintarLista(container, marcarQ, conReferencia) {
+    container.innerHTML = "";
+    playlist.forEach((it, i) => {
+      const div = document.createElement("div");
+      div.className = "verse" + (conReferencia ? " ref" : "");
+      div.dataset.i = i;
+      const s = seccionDe(it.bookNumber);
+      const refHead = conReferencia
+        ? `<div class="search-ref"><i class="dot" style="background:${s.color}"></i>${abreviar(it.bookNumber)} ${it.chapter}:${it.verse} <span class="bn">· ${escapeHtml(it.bookName)} · ${s.name}</span></div>`
+        : "";
+      const texto = `<div class="vtext">${resaltarQ(it.words.map(w=>w.t).join(" "), marcarQ)}</div>`;
+      div.innerHTML = conReferencia
+        ? refHead + texto
+        : `<div class="vnum">${it.verse}</div>` + texto;
+      div.addEventListener("click", () => {
+        proyectar(i, 0);
+        if (conReferencia) window.scrollTo(0, 0);
+      });
+      container.appendChild(div);
+    });
+  }
+
+  function marcarSeleccion() {
+    document.querySelectorAll(".verse").forEach(el => {
+      el.classList.toggle("selected", Number(el.dataset.i) === curIdx);
+    });
+    document.querySelectorAll("#verseGrid .numcell").forEach(el => {
+      el.classList.toggle("selected", curIdx >= 0 && playlist[curIdx] && Number(el.dataset.v) === playlist[curIdx].verse);
+    });
+    const sel = document.querySelector(".verse.selected");
+    if (sel) sel.scrollIntoView({ block: "nearest" });
+  }
+
+  function verLista() {
+    verseList.style.display = "block";
+    verseGrid.style.display = "none";
+    dotsButton.textContent = "🔲 Cuadrícula";
+    marcarSeleccion();
+  }
+  function verGrilla() {
+    verseList.style.display = "none";
+    verseGrid.style.display = "grid";
+    dotsButton.textContent = "⋮ Lista";
+  }
+  dotsButton.addEventListener("click", () => {
+    (verseList.style.display === "none") ? verLista() : verGrilla();
+  });
+
+  function activarTab(name) {
+    document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === name));
+    document.querySelectorAll(".tabpage").forEach(p => p.classList.toggle("active", p.id === "page-" + name));
+    if (name !== "busqueda") ultimoTab = name;
+  }
+  document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => activarTab(t.dataset.tab)));
+  function tabEstado(name, habilitado) {
+    document.querySelector(`.tab[data-tab="${name}"]`).classList.toggle("disabled", !habilitado);
+  }
+
+  // ---------- Buscador ----------
+  async function hacerBusqueda() {
+    const q = searchInput.value.trim();
+    if (q.length < 2) return;
+    if (!versionSelect.value) {
+      if (versionSelect.options.length > 1) versionSelect.selectedIndex = 1;
+      else return;
+      await cargarLibros();
+    }
+    resultList.innerHTML = '<div class="verse ref" style="color:#999;">Buscando…</div>';
+    searchInfo.style.display = "flex";
+    searchInfoTexto.textContent = `Buscando “${q}”…`;
+    tabEstado("busqueda", true);
+    activarTab("busqueda");
+    setTimeout(() => document.getElementById("page-busqueda").scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+
+    const r = await fetch(`./api/search?q=${encodeURIComponent(q)}&version=${encodeURIComponent(versionSelect.value)}`);
+    const res = await r.json();
+
+    playlist = res.map(item => ({
+      referencia: `${item.book_name} ${item.chapter}:${item.verse}`,
+      version: versionSelect.value,
+      bookName: item.book_name, bookNumber: item.book_number,
+      chapter: item.chapter, verse: item.verse,
+      words: String(item.text).replace(/\s+/g," ").trim().split(" ").filter(Boolean).map(t => ({ t: t, h: "" }))
+    }));
+    partesInfo = null; qBusqueda = q;
+
+    searchInfoTexto.textContent = `“${q}”: ${res.length} versículo(s)`;
+    pintarLista(resultList, q, true);
+  }
+  function salirBusqueda() {
+    searchInfo.style.display = "none";
+    searchInput.value = "";
+    qBusqueda = "";
+    tabEstado("busqueda", false);
+    activarTab(ultimoTab);
+  }
+  searchButton.addEventListener("click", hacerBusqueda);
+  searchInput.addEventListener("keydown", e => { if (e.key === "Enter") hacerBusqueda(); });
+  clearSearchButton.addEventListener("click", salirBusqueda);
+
+  clearButton.addEventListener("click", () => {
+    playlist = []; curIdx = -1; curPart = 0; partesInfo = null;
+    selectedBookName = ""; currentBookNumber = null;
+    salirModoResaltar();
+    preview.style.display = "none";
+    editVerseButton.disabled = true;
+    bookGrid.innerHTML = "";
+    bookList.innerHTML = ""; bookList.classList.remove("visible");
+    bookGrid.style.display = "grid";
+    bookViewBtn.textContent = "📋 Lista";
+    chapterGrid.innerHTML = ""; verseGrid.innerHTML = ""; verseList.innerHTML = ""; resultList.innerHTML = "";
+    searchInput.value = ""; searchInfo.style.display = "none";
+    tabEstado("capitulo", false); tabEstado("versiculo", false); tabEstado("busqueda", false);
+    activarTab("libro");
+  });
+
+  versionSelect.addEventListener("change", () => {
+    clearButton.click();
+    if (versionSelect.value) cargarLibros();
+  });
+
+  // ---------- ARRANQUE ----------
+  if (!iglesias.length) {
+    // Primera vez: pantalla para crear las iglesias (no conecta todavía)
+    actualizarTagIglesia();
+    abrirOverlayIglesias(true);
+  } else {
+    if (!iglesiaActual || !iglesias.find(g => g.id === iglesiaActual)) {
+      iglesiaActual = iglesias[0].id;
+      guardarIglesias();
+    }
+    if (!salaActual) salaActual = iglesiaActual;
+    actualizarTagIglesia();
+    cargarVersiones();
+    connectWebSocket();
+  }
+</script>
+</body>
+</html>
