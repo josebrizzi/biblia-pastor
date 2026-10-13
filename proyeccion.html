@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proyección - Biblia Sincronizada</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&family=Montserrat:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; padding: 0; }
+    body {
+      font-family: 'Roboto', Arial, sans-serif;
+      background: #ffffff;
+      color: #111;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.3s, color 0.3s;
+    }
+    body.f-claro        { background: #ffffff; color: #111; }
+    body.f-doodle-claro { background: #f7f3ea; color: #222; }
+    body.f-sepia        { background: #f6eedd; color: #3b2f1e; }
+    body.f-oscuro       { background: #0e1216; color: #f2f2f2; }
+    body.f-doodle-oscuro{ background: #12161b; color: #f2f2f2; }
+    body.f-azul         { background: linear-gradient(160deg, #0b1e3a, #12335f); color: #eef3fb; }
+
+    .proyeccion {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 4vh 6vw;
+      position: relative;
+    }
+    .reference {
+      font-family: 'Montserrat', 'Roboto', sans-serif;
+      font-weight: 900;
+      width: 100%;
+      text-align: center;
+      font-size: clamp(34px, 4.6vw, 62px);
+      margin-bottom: 3vh;
+      color: #173f35;
+    }
+    body.f-sepia .reference { color: #8a5a2a; }
+    body.f-oscuro .reference, body.f-doodle-oscuro .reference { color: #7fd4b5; }
+    body.f-azul .reference { color: #bcd7ff; }
+
+    .text {
+      width: 100%;
+      max-height: 78vh;
+      overflow-y: auto;
+      font-size: clamp(42px, 6.4vw, 100px);
+      font-weight: 700;
+      line-height: 1.38;
+      text-align: center;
+      color: inherit;
+      scrollbar-width: thin;
+    }
+    .text::-webkit-scrollbar { width: 8px; }
+    .text::-webkit-scrollbar-thumb { background: #bbb; border-radius: 8px; }
+    .version {
+      width: 100%;
+      text-align: center;
+      margin-top: 3vh;
+      font-size: clamp(18px, 2vw, 28px);
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #666;
+    }
+    body.f-sepia .version { color: #8a7a5a; }
+    body.f-oscuro .version, body.f-doodle-oscuro .version { color: #9aa5a0; }
+    body.f-azul .version { color: #9db8dd; }
+    .waiting { text-align: center; color: #777; }
+
+    .fullscreen-button {
+      position: fixed; right: 18px; bottom: 18px;
+      width: 44px; height: 44px; border: none; border-radius: 50%;
+      background: rgba(128,128,128,0.25); color: #888; cursor: pointer;
+      font-size: 20px; opacity: 0.4; transition: opacity 0.2s;
+    }
+    .fullscreen-button:hover { opacity: 1; }
+    #partBadge {
+      position: fixed; right: 74px; bottom: 18px;
+      padding: 9px 16px; border-radius: 22px;
+      background: #173f35; color: #fff;
+      font-family: Arial, sans-serif; font-size: 15px; font-weight: bold;
+      display: none; cursor: pointer; opacity: 0.9;
+    }
+    .status {
+      position: fixed; left: 15px; bottom: 15px;
+      padding: 6px 10px; border-radius: 20px;
+      background: #ddd; color: #555; font-size: 12px; opacity: 0.45;
+    }
+    .status.connected { background: #dcece5; color: #173f35; }
+
+    mark { color: #111; border-radius: 3px; }
+
+    #startOverlay {
+      position: fixed; inset: 0; z-index: 50;
+      background: rgba(5,10,8,0.88);
+      display: flex; align-items: center; justify-content: center;
+    }
+    #startOverlay.hidden { display: none; }
+    .ov-card { text-align: center; color: #fff; padding: 20px; }
+    .ov-title { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 34px; margin-bottom: 10px; }
+    .ov-sala { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 18px; color: #ffd54f; margin-bottom: 26px; }
+    #startBtn {
+      border: none; border-radius: 14px; padding: 22px 40px;
+      background: #173f35; color: #fff; font-size: 26px; font-weight: bold;
+      cursor: pointer; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+    #startBtn:active { transform: scale(0.97); }
+    .ov-note { margin-top: 18px; font-size: 15px; color: #b9c6c0; line-height: 1.5; }
+  </style>
+</head>
+<body class="f-claro">
+  <main id="main" class="proyeccion">
+    <div id="reference" class="reference">Biblia Sincronizada</div>
+    <div id="text" class="text waiting">Esperando que el predicador proyecte un versículo...</div>
+    <div id="version" class="version"></div>
+  </main>
+  <button id="fullscreenButton" class="fullscreen-button" title="Pantalla completa">⛶</button>
+  <div id="partBadge">Parte 1 ▶</div>
+  <div id="status" class="status">Conectando...</div>
+
+  <div id="startOverlay">
+    <div class="ov-card">
+      <div class="ov-title">📖 BIBLIA SINCRONIZADA</div>
+      <div class="ov-sala" id="ovSala"></div>
+      <button id="startBtn">⛶ PANTALLA COMPLETA</button>
+      <div class="ov-note">Tocá una vez para activar la vista completa.<br>Después se mantiene sola en cada proyección.</div>
+    </div>
+  </div>
+
+  <script>
+    const reference = document.getElementById("reference");
+    const text = document.getElementById("text");
+    const version = document.getElementById("version");
+    const status = document.getElementById("status");
+    const fullscreenButton = document.getElementById("fullscreenButton");
+    const partBadge = document.getElementById("partBadge");
+    const main = document.getElementById("main");
+    const startOverlay = document.getElementById("startOverlay");
+    const startBtn = document.getElementById("startBtn");
+    const ovSala = document.getElementById("ovSala");
+
+    let ws;
+    let ultimoData = null;
+    let divisiones = [];
+    let totalPartes = 1;
+    let parteActual = 0;
+
+    const MAX_LINEAS = 4;
+
+    // ===== SALA / IGLESIA =====
+    let salaActual = "general";
+    try { salaActual = localStorage.getItem("proySala") || salaActual; } catch(e) {}
+    const urlSala = new URLSearchParams(location.search).get("sala");
+    if (urlSala) {
+      salaActual = urlSala.toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 20) || "general";
+      try { localStorage.setItem("proySala", salaActual); } catch(e) {}
+    }
+    ovSala.textContent = "IGLESIA: " + salaActual.toUpperCase();
+
+    // ---------- ABREVIATURAS ----------
+    function normalizar(s) {
+      return String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    }
+    const LIBRO_ABBR = {
+      "genesis":"Gn","exodo":"Ex","levitico":"Lv","numeros":"Nm","deuteronomio":"Dt",
+      "josue":"Js","jueces":"Jz","rut":"Rt","1 samuel":"1S","2 samuel":"2S",
+      "1 reyes":"1R","2 reyes":"2R","1 cronicas":"1Cr","2 cronicas":"2Cr",
+      "esdras":"Esd","nehemias":"Neh","ester":"Est","job":"Job","salmos":"Sal","salmo":"Sal",
+      "proverbios":"Pr","eclesiastes":"Ec","cantares":"Ct","cantar de los cantares":"Ct",
+      "isaias":"Is","jeremias":"Jr","lamentaciones":"Lm","ezequiel":"Ez","daniel":"Dn",
+      "oseas":"Os","joel":"Jl","amos":"Am","obadias":"Ob","jonas":"Jon","miqueas":"Mi",
+      "nahum":"Nah","habacuc":"Hab","sofonias":"Sof","hageo":"Hag","zacarias":"Zac","malaquias":"Mal",
+      "mateo":"Mt","marcos":"Mr","lucas":"Lc","juan":"Jn","hechos":"Hch","romanos":"Ro",
+      "1 corintios":"1Co","2 corintios":"2Co","galatas":"Ga","efesios":"Ef","filipenses":"Fil",
+      "colosenses":"Col","1 tesalonicenses":"1Ts","2 tesalonicenses":"2Ts",
+      "1 timoteo":"1Ti","2 timoteo":"2Ti","tito":"Tit","filemon":"Flm","hebreos":"Heb",
+      "santiago":"Stg","1 pedro":"1P","2 pedro":"2P","1 juan":"1Jn","2 juan":"2Jn","3 juan":"3Jn",
+      "judas":"Jud","apocalipsis":"Ap"
+    };
+    function abreviarLibro(nombre) {
+      return LIBRO_ABBR[normalizar(nombre)] || nombre;
+    }
+    const VERSION_ABBR = {
+      "reina-valera 1960": "RV60",
+      "reina valera 1960": "RV60",
+      "nueva traduccion viviente": "NTV",
+      "dios habla hoy": "DHH",
+      "traduccion en lenguaje actual": "TLA"
+    };
+    function abreviarVersion(v) {
+      const key = normalizar(v);
+      if (VERSION_ABBR[key]) return VERSION_ABBR[key];
+      return v.split(/\s+/).map(p => p[0] || "").join("").toUpperCase().slice(0, 5);
+    }
+
+    // ---------- FONDOS ----------
+    const FONDOS = ["claro", "doodle-claro", "sepia", "oscuro", "doodle-oscuro", "azul"];
+    function doodleSVG(color, op) {
+      const s =
+        "<g fill='none' stroke='" + color + "' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' opacity='" + op + "'>" +
+        "<path d='M60 28 v52 M34 54 h52'/>" +
+        "<path d='M150 62 q26 -24 52 0 q-26 24 -52 0 z M202 62 l16 -13 M202 62 l16 13'/>" +
+        "<path d='M64 152 q22 -30 48 -8 q-22 28 -48 8 z'/>" +
+        "<circle cx='162' cy='152' r='9'/><path d='M171 152 v-40 q18 4 24 18'/>" +
+        "<path d='M44 96 l7 15 16 2 -12 11 3 16 -14 -8 -14 8 3 -16 -12 -11 16 -2 z'/>" +
+        "<path d='M118 208 q22 -13 44 0 M118 208 q22 13 44 0 M140 208 v-15'/>" +
+        "</g>";
+      return "<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'>" + s + "</svg>";
+    }
+    function aplicarFondo(id) {
+      const f = FONDOS.includes(id) ? id : "claro";
+      document.body.className = "f-" + f;
+      if (f === "doodle-claro") {
+        document.body.style.backgroundImage = "url(\"data:image/svg+xml;utf8," + encodeURIComponent(doodleSVG("#6b5d4a", 0.10)) + "\")";
+      } else if (f === "doodle-oscuro") {
+        document.body.style.backgroundImage = "url(\"data:image/svg+xml;utf8," + encodeURIComponent(doodleSVG("#ffffff", 0.05)) + "\")";
+      } else {
+        document.body.style.backgroundImage = "";
+      }
+      try { localStorage.setItem("proyFondo", f); } catch (e) {}
+    }
+    try { aplicarFondo(localStorage.getItem("proyFondo") || "claro"); } catch (e) {}
+
+    // ---------- PANTALLA COMPLETA ----------
+    function pedirPantallaCompleta() {
+      if (document.fullscreenElement) return;
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+    function ocultarOverlay() { startOverlay.classList.add("hidden"); }
+    startBtn.addEventListener("click", () => { pedirPantallaCompleta(); ocultarOverlay(); });
+    fullscreenButton.addEventListener("click", pedirPantallaCompleta);
+
+    function escapeHtml(s) {
+      return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    }
+
+    function palabrasAHtml(palabras, desde, hasta) {
+      let html = "", colorAbierto = "";
+      for (let i = desde; i < hasta; i++) {
+        const w = palabras[i];
+        if (w.h && w.h !== colorAbierto) {
+          if (colorAbierto) html += "</mark>";
+          html += '<mark style="background-color:' + w.h + '">';
+          colorAbierto = w.h;
+        } else if (!w.h && colorAbierto) {
+          html += "</mark>";
+          colorAbierto = "";
+        }
+        html += escapeHtml(w.t);
+        if (i < hasta - 1) html += " ";
+      }
+      if (colorAbierto) html += "</mark>";
+      return html;
+    }
+
+    function mideOK(words, r) {
+      text.innerHTML = palabrasAHtml(words, r[0], r[1]);
+      const lh = parseFloat(getComputedStyle(text).lineHeight) || 10;
+      const lineas = Math.round(text.scrollHeight / lh);
+      return lineas <= MAX_LINEAS && text.scrollHeight <= text.clientHeight + 2;
+    }
+
+    function cortarEnN(words, N) {
+      const total = words.reduce((a, w) => a + w.t.length + 1, 0);
+      const objetivo = total / N;
+      const cortes = [];
+      let acc = 0, nextCut = 1;
+      for (let i = 0; i < words.length && cortes.length < N - 1; i++) {
+        acc += words[i].t.length + 1;
+        if (acc >= objetivo && i < words.length - 1) {
+          let mejor = i;
+          const ventana = Math.max(2, Math.floor(words.length * 0.05));
+          for (let d = 0; d <= ventana; d++) {
+            const izq = i - d, der = i + d;
+            if (izq > nextCut && izq < words.length - 1 && /[.,;:?!]$/.test(words[izq-1].t)) { mejor = izq; break; }
+            if (der < words.length - 1 && der > nextCut && /[.,;:?!]$/.test(words[der-1].t)) { mejor = der; break; }
+          }
+          cortes.push(mejor);
+          nextCut = mejor + 1;
+          acc = 0;
+        }
+      }
+      const rangos = [];
+      let desde = 0;
+      cortes.forEach(c => { rangos.push([desde, c]); desde = c; });
+      rangos.push([desde, words.length]);
+      return rangos;
+    }
+
+    function medirYDividir(words) {
+      text.className = "text";
+      if (mideOK(words, [0, words.length])) return [[0, words.length]];
+      let ultimo = null;
+      for (let N = 2; N <= 8; N++) {
+        const rangos = cortarEnN(words, N);
+        if (rangos.every(r => mideOK(words, r))) return rangos;
+        ultimo = rangos;
+      }
+      return ultimo;
+    }
+
+    function mostrarVerse(data) {
+      ultimoData = data;
+      reference.textContent = `${abreviarLibro(data.bookName)} ${data.chapter}:${data.verse}`;
+      version.textContent = abreviarVersion(data.version || "");
+      text.className = "text";
+
+      divisiones = medirYDividir(data.words || []);
+      totalPartes = divisiones.length;
+      parteActual = Math.min(Math.max(0, data.part || 0), totalPartes - 1);
+
+      const r = divisiones[parteActual];
+      text.innerHTML = palabrasAHtml(data.words, r[0], r[1]);
+      text.scrollTop = 0;
+      actualizarBadge();
+      avisarPartes();
+    }
+
+    function mostrarFree(data) {
+      ultimoData = null;
+      totalPartes = 1; parteActual = 0;
+      reference.textContent = "Cita";
+      text.className = "text";
+      text.innerHTML = data.html || "";
+      version.textContent = "";
+      text.scrollTop = 0;
+      actualizarBadge();
+    }
+
+    function mostrarProyeccion(data) {
+      if (!data) return;
+      if (data.type === "verse") {
+        if (!startOverlay.classList.contains("hidden")) {
+          ocultarOverlay();
+          pedirPantallaCompleta();
+        }
+        mostrarVerse(data);
+      }
+      else if (data.type === "freeText") mostrarFree(data);
+      else if (data.type === "theme") aplicarFondo(data.fondo);
+    }
+
+    function irAParte(n) {
+      if (!ultimoData || n < 0 || n >= totalPartes) return;
+      parteActual = n;
+      const r = divisiones[n];
+      text.innerHTML = palabrasAHtml(ultimoData.words, r[0], r[1]);
+      text.scrollTop = 0;
+      actualizarBadge();
+      avisarPartes();
+    }
+
+    function actualizarBadge() {
+      if (totalPartes > 1) {
+        partBadge.style.display = "block";
+        partBadge.textContent = "Parte " + (parteActual + 1) + " de " + totalPartes +
+          (parteActual + 1 < totalPartes ? "  ▶" : "");
+      } else partBadge.style.display = "none";
+    }
+
+    function avisarPartes() {
+      if (!ws || ws.readyState !== WebSocket.OPEN || !ultimoData) return;
+      ws.send(JSON.stringify({
+        type: "project",
+        reference: "",
+        data: {
+          type: "parts-info",
+          count: totalPartes,
+          current: parteActual + 1,
+          ranges: divisiones,
+          verse: ultimoData.verse,
+          chapter: ultimoData.chapter
+        }
+      }));
+    }
+
+    main.addEventListener("click", () => irAParte((parteActual + 1) % totalPartes));
+    partBadge.addEventListener("click", (e) => { e.stopPropagation(); irAParte((parteActual + 1) % totalPartes); });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") { e.preventDefault(); irAParte((parteActual + 1) % totalPartes); }
+      else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); irAParte((parteActual - 1 + totalPartes) % totalPartes); }
+    });
+
+    function conectar() {
+      const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+      ws = new WebSocket(`${protocol}//${location.host}`);
+      ws.addEventListener("open", () => {
+        ws.send(JSON.stringify({ type: "join", sala: salaActual })); // entra a SU iglesia
+        status.textContent = "Conectado · v18 · " + salaActual.toUpperCase();
+        status.classList.add("connected");
+      });
+      ws.addEventListener("close", () => {
+        status.textContent = "Desconectado";
+        status.classList.remove("connected");
+        setTimeout(conectar, 2000);
+      });
+      ws.addEventListener("error", () => { status.textContent = "Error de conexión"; status.classList.remove("connected"); });
+      ws.addEventListener("message", (event) => {
+        try {
+          const message = JSON.parse(event.data);
+          if (message.type === "projection") mostrarProyeccion(message.data);
+        } catch (error) { console.error(error); }
+      });
+    }
+
+    conectar();
+  </script>
+</body>
+</html>
