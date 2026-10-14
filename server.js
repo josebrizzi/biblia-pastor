@@ -79,17 +79,18 @@ app.get("/api/verses", (req, res) => {
   );
 });
 
-// ---- Buscador ----
+// ---- Buscador: palabra completa, hasta 200 resultados ----
 app.get("/api/search", (req, res) => {
   const q = String(req.query.q || "").trim();
   const version = String(req.query.version || "");
-  const limit = Math.min(parseInt(req.query.limit, 10) || 50, 200);
+  const limit = Math.min(parseInt(req.query.limit, 10) || 200, 200);
 
   if (!q) return res.status(400).json({ error: "Falta el parámetro q" });
   if (!version) return res.status(400).json({ error: "Falta la versión." });
 
   const seguro = q.replace(/[\\%_]/g, (m) => "\\" + m);
   const like = "%" + seguro + "%";
+  const CANDIDATOS = 4000;
 
   db.all(
     `SELECT book_number, book_name, chapter, verse, text
@@ -97,10 +98,19 @@ app.get("/api/search", (req, res) => {
      WHERE version = ? AND text LIKE ? ESCAPE '\\'
      ORDER BY book_number, chapter, verse
      LIMIT ?`,
-    [version, like, limit],
+    [version, like, CANDIDATOS],
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
-      res.json(rows);
+
+      const esc = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      let re;
+      try {
+        re = new RegExp("(?<![\\p{L}\\p{N}])" + esc + "(?![\\p{L}\\p{N}])", "iu");
+      } catch (e) {
+        re = new RegExp("\\b" + esc + "\\b", "i");
+      }
+      const filtradas = rows.filter(r => re.test(r.text));
+      res.json(filtradas.slice(0, limit));
     }
   );
 });
@@ -130,7 +140,6 @@ wss.on("connection", (ws) => {
     try {
       const data = JSON.parse(message.toString());
 
-      // El cliente elige su iglesia/sala
       if (data.type === "join") {
         const anterior = ws.sala;
         ws.sala = limpiarSala(data.sala);
@@ -141,7 +150,6 @@ wss.on("connection", (ws) => {
         return;
       }
 
-      // Autenticación por código
       if (data.type === "auth") {
         if (!CODIGO_ACCESO) {
           ws.autorizado = true;
@@ -163,7 +171,6 @@ wss.on("connection", (ws) => {
         const necesitaAuth = (t === "verse" || t === "freeText");
         if (necesitaAuth && CODIGO_ACCESO && !ws.autorizado) return;
 
-        // SOLO se envía a los clientes de la MISMA sala/iglesia
         const out = JSON.stringify({ type: "projection", data: data.data });
         wss.clients.forEach((c) => {
           if (c.readyState === WebSocket.OPEN && c.sala === ws.sala) c.send(out);
