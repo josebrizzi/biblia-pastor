@@ -32,42 +32,30 @@
   .pbox { border-radius:10px; padding:10px 12px; cursor:pointer; }
   .pbox .pref { font-weight:bold; font-size:14px; }
   .pbox .ptext { font-size:16px; line-height:1.4; margin-top:2px; }
-  .pbox.prev {
-    background:#b91c1c; color:#fff; text-align:center;
-    padding:16px 12px; border-radius:12px; min-height:76px;
-    box-shadow:0 2px 8px rgba(0,0,0,.25);
+  /* Recuadro VERDE: lo que SE ESTÁ PROYECTANDO en este momento */
+  .pbox.cur {
+    background:#15803d; color:#fff; text-align:center;
+    padding:14px 12px; border-radius:12px; cursor:default;
+    box-shadow:0 2px 10px rgba(21,128,61,.35);
+    transition: background 0.3s, color 0.3s;
   }
-  .pbox.prev:active { filter:brightness(1.15); }
-  .pbox.prev::before {
-    content:"◀◀  VOLVER"; display:block;
-    font-family:'Montserrat', Arial, sans-serif;
-    font-size:24px; font-weight:900; letter-spacing:2px; margin-bottom:4px;
-  }
-  .pbox.prev .pref { color:#ffd9d9; font-size:13px; }
-  .pbox.prev .ptext { color:#fff; font-size:14px; }
-
-  .pbox.next {
-    background:#dc2626; color:#fff; text-align:center;
-    padding:16px 12px; border-radius:12px; min-height:76px;
-    box-shadow:0 2px 8px rgba(0,0,0,.25);
-  }
-  .pbox.next:active { filter:brightness(1.15); }
-  .pbox.next::after {
-    content:"AVANZAR  ▶▶"; display:block;
-    font-family:'Montserrat', Arial, sans-serif;
-    font-size:24px; font-weight:900; letter-spacing:2px; margin-top:4px;
-  }
-  .pbox.next .pref { color:#ffd9d9; font-size:13px; }
-  .pbox.next .ptext { color:#fff; font-size:14px; }
-  .pbox.cur { background:#fff; border:2px solid #173f35; cursor:default; transition: background 0.3s, color 0.3s; }
-  .pbox.cur .pref { color:#173f35; font-size:16px; font-family:'Montserrat', Arial, sans-serif; }
-  .pbox.cur .ptext { font-size:22px; font-weight:bold; line-height:1.5; max-height:40vh; overflow-y:auto;
+  .pbox.cur .pref { color:#cdebd8; font-size:13.5px; font-family:'Montserrat', Arial, sans-serif; }
+  .pbox.cur .ptext { color:#fff; font-size:19px; font-weight:bold; line-height:1.5; max-height:36vh; overflow-y:auto;
                      font-family:'Inter', Arial, sans-serif; }
-  .pbox.cur.dark { background:#0e1216; color:#f2f2f2; border-color:#4a7d6d; }
-  .pbox.cur.dark .pref { color:#7fd4b5; }
-  .pbox.cur.resaltando { border-color:#b45309; }
-  .pbox.cur.resaltando::before { content:"🖍️ Elegí un color y tocá las palabras"; display:block; font-size:11px; color:#b45309; letter-spacing:.4px; margin-bottom:6px; font-weight:bold; }
+  .pbox.cur.resaltando { border:3px solid #f59e0b; cursor:pointer; }
+  .pbox.cur.resaltando::before { content:"🖍️ Elegí un color y tocá las palabras"; display:block; font-size:11px; color:#fef3c7; letter-spacing:.4px; margin-bottom:6px; font-weight:bold; }
   .pbox.cur.resaltando .ptext { cursor:pointer; user-select:none; }
+
+  /* Recuadros GRISES: lo que viene (partes 2 y 3 del versículo, o el
+     versículo siguiente). El gris indica que AÚN no está proyectado. */
+  .pbox.q {
+    background:#6b7280; color:#fff; text-align:center;
+    padding:12px; border-radius:12px; min-height:64px;
+    box-shadow:0 2px 6px rgba(0,0,0,.15);
+  }
+  .pbox.q:active { filter:brightness(1.12); }
+  .pbox.q .pref { color:#eef1f4; font-size:12.5px; }
+  .pbox.q .ptext { color:#fff; font-size:14px; line-height:1.45; }
   .pbox.hidden { display:none; }
   .ptext .palabra { border-radius:3px; }
 
@@ -77,9 +65,35 @@
   .cbtn.sel { border-color:#173f35; box-shadow:0 0 0 2px #fff inset; }
 
   .tabs { display:flex; background:#fff; border-bottom:2px solid #e0ddd5; position:sticky; top:0; z-index:5; }
-  .tab { flex:1; text-align:center; padding:12px 2px; font-weight:bold; font-size:13px; color:#888; cursor:pointer; border-bottom:3px solid transparent; }
+  .tab { flex:1; text-align:center; padding:12px 2px; font-weight:bold; font-size:clamp(10px, 2.9vw, 13px); color:#888; cursor:pointer; border-bottom:3px solid transparent; position:relative; }
   .tab.active { color:#173f35; border-bottom-color:#173f35; }
   .tab.disabled { color:#ccc; pointer-events:none; }
+
+  .tbadge { position:absolute; top:4px; right:4px; background:#dc2626; color:#fff; border-radius:9px; min-width:15px; height:15px; font-size:9.5px; line-height:15px; text-align:center; padding:0 4px; display:none; font-family:Arial; font-weight:normal; }
+  .tbadge.has { display:block; }
+
+  /* ===== PREDICACIÓN ===== */
+  .ptoolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:8px; }
+  .ptitle { font-weight:bold; color:#173f35; font-size:15px; letter-spacing:1px; font-family:'Montserrat', Arial, sans-serif; }
+  .mini-btn.rojo { background:#b91c1c; }
+  #predList { border:1px solid #ddd; border-radius:10px; overflow:hidden; background:#fff; }
+  .predica-item { display:flex; gap:10px; align-items:center; padding:13px 12px; border-bottom:1px solid #e8e8e8; cursor:pointer; background:#fff; }
+  .predica-item:last-child { border-bottom:none; }
+  .predica-item:hover { background:#f4f7f5; }
+  .predica-item.selected { background:#c8e6c9; }
+  .porder { min-width:30px; height:30px; border-radius:50%; background:#173f35; color:#fff; font-weight:bold; font-size:15px; display:flex; align-items:center; justify-content:center; flex:0 0 auto; font-family:Arial; }
+  .pmain { flex:1; min-width:0; }
+  .predref { font-weight:bold; font-size:18px; color:#173f35; display:flex; align-items:center; gap:8px; font-family:'Montserrat', Arial, sans-serif; }
+  .predref .dot { width:11px; height:11px; border-radius:3px; display:inline-block; flex:0 0 auto; }
+  .predmeta { font-size:12px; color:#888; margin-top:2px; font-family:Arial; }
+  .delbtn { border:none; background:#fde8e8; color:#b91c1c; width:34px; height:34px; border-radius:8px; font-size:15px; font-weight:bold; cursor:pointer; flex:0 0 auto; }
+  .delbtn:active { background:#f8c9c9; }
+  .pred-vacio { color:#999; font-size:14px; text-align:center; padding:26px 16px; line-height:1.7; background:#fff; border:1px dashed #ccc; border-radius:10px; }
+  .addbtn { border:none; background:#eef4f1; color:#173f35; border-radius:8px; padding:9px 11px; font-size:16px; cursor:pointer; flex:0 0 auto; align-self:center; font-weight:bold; }
+  .addbtn.en-lista { background:#c8e6c9; color:#1b5e20; }
+  .vcontenido { flex:1; min-width:0; }
+  #toast { position:fixed; bottom:180px; left:50%; transform:translateX(-50%) translateY(12px); background:#173f35; color:#fff; padding:10px 18px; border-radius:22px; font-size:14px; font-weight:bold; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; z-index:60; max-width:86vw; text-align:center; box-shadow:0 3px 12px rgba(0,0,0,.3); }
+  #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
   main { max-width:1000px; margin:0 auto; }
   .tabpage { display:none; padding:10px 12px 150px; }
@@ -135,7 +149,7 @@
   .verse:last-child { border-bottom:none; }
   .verse:hover { background:#f4f7f5; }
   .verse.selected { background:#c8e6c9; }
-  .verse.ref { display:block; }
+  /* .verse.ref ahora es flex para alojar el botón ➕ */
   .vnum { min-width:30px; font-weight:bold; color:#173f35; font-size:18px; }
   .vtext { font-size:19px; line-height:1.5; }
   .vtext mark { background:#ffe27a; padding:0 2px; border-radius:3px; }
@@ -155,6 +169,11 @@
   #editVerseButton { background:#b45309; color:#fff; flex:1; }
   #editVerseButton.resaltando { background:#7a5c00; }
   #editVerseButton:disabled { background:#ccc; cursor:not-allowed; }
+  #predicaAddButton { background:#173f35; color:#fff; flex:1; }
+  #predicaAddButton:disabled { background:#ccc; cursor:not-allowed; }
+  @media (max-width: 420px) {
+    .actions button { padding:12px 8px; font-size:14px; }
+  }
   #clearButton { background:#ddd; color:#222; }
 
   .status { padding:6px 12px 4px; font-size:13px; color:#666; display:flex; gap:12px; align-items:center; }
@@ -243,10 +262,10 @@
 </div>
 
 <div class="preview" id="preview">
-  <div class="pbox prev hidden" id="prevBox"></div>
   <div class="pbox cur" id="curBox"><div class="pref" id="curRef"></div><div class="ptext" id="curText"></div></div>
   <div class="colores" id="coloresRow"></div>
-  <div class="pbox next hidden" id="nextBox"></div>
+  <div class="pbox q hidden" id="qBox2"></div>
+  <div class="pbox q hidden" id="qBox3"></div>
 </div>
 
 <div class="tabs">
@@ -254,6 +273,7 @@
   <div class="tab disabled" data-tab="capitulo">CAPÍTULO</div>
   <div class="tab disabled" data-tab="versiculo">VERSÍCULO</div>
   <div class="tab disabled" data-tab="busqueda">BUSCAR</div>
+  <div class="tab" data-tab="predica">PREDICACIÓN<span class="tbadge" id="predicaBadge"></span></div>
 </div>
 
 <main>
@@ -275,8 +295,18 @@
     <div class="vtoolbar">
       <button id="dotsButton" class="mini-btn">⋮ Lista</button>
     </div>
+    <div class="hint">Mantené presionado (o clic derecho) un número para ➕ agregarlo a la predicación</div>
     <div class="grid-num" id="verseGrid"></div>
     <div class="vlist" id="verseList" style="display:none;"></div>
+  </section>
+  <section class="tabpage" id="page-predica">
+    <div class="ptoolbar">
+      <span class="ptitle">🙌 Lista de predicación</span>
+      <button id="vaciarPredicaBtn" class="mini-btn rojo">🗑️ Vaciar</button>
+    </div>
+    <div id="predList"></div>
+    <div class="pred-vacio" id="predVacio">Todavía no agregaste versículos.<br>Tocá <b>➕</b> en un versículo de la lista, mantené presionado un número de la cuadrícula, o proyectá un versículo y tocá <b>➕ Predicación</b> abajo.<br>Se guardan en el orden en que los elegís.</div>
+    <div class="hint">Tocá un versículo para proyectarlo · ✕ lo saca de la lista · La lista queda guardada en este equipo</div>
   </section>
   <section class="tabpage" id="page-busqueda">
     <div class="vlist" id="resultList" style="margin-top:0;"></div>
@@ -286,10 +316,13 @@
 <div class="bottombar">
   <div class="fondos-row" id="fondosRow"></div>
   <div class="actions">
+    <button id="predicaAddButton" disabled title="Agregar el versículo proyectado a la lista de predicación">➕ Predicación</button>
     <button id="editVerseButton" disabled>🖍️ Resaltar</button>
     <button id="clearButton">Limpiar</button>
   </div>
 </div>
+
+<div id="toast"></div>
 
 <div class="status">
   WebSocket: <span id="wsStatus">Conectando...</span>
@@ -309,8 +342,8 @@
   const dotsButton = document.getElementById("dotsButton");
   const resultList = document.getElementById("resultList");
   const preview = document.getElementById("preview");
-  const prevBox = document.getElementById("prevBox");
-  const nextBox = document.getElementById("nextBox");
+  const qBox2 = document.getElementById("qBox2");
+  const qBox3 = document.getElementById("qBox3");
   const curBox = document.getElementById("curBox");
   const curRef = document.getElementById("curRef");
   const curText = document.getElementById("curText");
@@ -329,6 +362,11 @@
   const lockBtn = document.getElementById("lockBtn");
   const lockMsg = document.getElementById("lockMsg");
   const cambiarCodigoBtn = document.getElementById("cambiarCodigoBtn");
+  const predicaAddButton = document.getElementById("predicaAddButton");
+  const vaciarPredicaBtn = document.getElementById("vaciarPredicaBtn");
+  const predList = document.getElementById("predList");
+  const predVacio = document.getElementById("predVacio");
+  const predicaBadge = document.getElementById("predicaBadge");
   const btnIglesia = document.getElementById("btnIglesia");
   const salaTag = document.getElementById("salaTag");
   const igOverlay = document.getElementById("igOverlay");
@@ -375,6 +413,8 @@
   let curIdx = -1;
   let curPart = 0;
   let partesInfo = null;
+  let colaProxima = [];  // próximas partes del versículo y versículo siguiente
+  let touchX0 = null, touchY0 = null, swipeBloqueado = false, swipeHecho = false;
   let selectedBookName = "";
   let currentBookNumber = null;
   let ultimoTab = "libro";
@@ -386,6 +426,16 @@
   let historial = [];
   try { favoritos = JSON.parse(localStorage.getItem("bibFav") || "[]"); } catch(e) { favoritos = []; }
   try { historial = JSON.parse(localStorage.getItem("bibHist") || "[]"); } catch(e) { historial = []; }
+
+  // ===== Lista de predicación (orden = orden de selección) =====
+  let predicaItems = [];
+  let enPredica = false;
+  let capActual = null;
+  let playlistBusqueda = [];
+  try {
+    const rawPred = JSON.parse(localStorage.getItem("bibPredica") || "[]");
+    if (Array.isArray(rawPred)) predicaItems = rawPred.filter(p => p && p.bookName && Array.isArray(p.words)).slice(0, 60);
+  } catch(e) { predicaItems = []; }
 
   // ============================================================
   // GESTOR DE IGLESIAS DEL PASTOR (hasta 7, con nombre editable)
@@ -588,7 +638,6 @@
   function setFondo(id, avisar) {
     const f = FONDOS.find(x => x.id === id) || FONDOS[0];
     fondoActual = f.id;
-    curBox.classList.toggle("dark", f.dark);
     document.querySelectorAll(".fbtn").forEach(b => b.classList.toggle("sel", b.dataset.f === f.id));
     try { localStorage.setItem("adminFondo", f.id); } catch (e) {}
     if (avisar) enviarFondo(f.id);
@@ -651,12 +700,22 @@
     return s;
   }
 
+  // Fila de proyección: próximas partes del versículo y versículo siguiente
+  function calcularCola() {
+    colaProxima = [];
+    if (curIdx < 0 || !playlist[curIdx]) return;
+    const nP = partesInfo ? partesInfo.count : rangesDe(playlist[curIdx]).length;
+    if (curPart < nP - 1) colaProxima.push({ idx: curIdx, part: curPart + 1 });
+    if (curPart < nP - 2) colaProxima.push({ idx: curIdx, part: curPart + 2 });
+    if (colaProxima.length < 2 && curIdx < playlist.length - 1) colaProxima.push({ idx: curIdx + 1, part: 0 });
+  }
+
   function proyectar(idx, part) {
     if (idx < 0 || idx >= playlist.length) return;
     if (esperandoAuth || !lockOverlay.classList.contains("hidden")) return;
+    if (idx !== curIdx) partesInfo = null;  // mismo versículo: se conserva la división real ya medida
     curIdx = idx;
     curPart = Math.max(0, part || 0);
-    partesInfo = null;
     salirModoResaltar();
     const it = playlist[curIdx];
     if (ws && ws.readyState === WebSocket.OPEN) {
@@ -676,7 +735,7 @@
   }
 
   function actualizarPreview() {
-    if (curIdx < 0) { preview.style.display = "none"; editVerseButton.disabled = true; return; }
+    if (curIdx < 0) { preview.style.display = "none"; editVerseButton.disabled = true; predicaAddButton.disabled = true; return; }
     preview.style.display = "flex";
     preview.classList.toggle("resaltando", modoResaltar);
     const it = playlist[curIdx];
@@ -698,43 +757,70 @@
     }
 
     if (modoResaltar) {
-      prevBox.classList.add("hidden");
-      nextBox.classList.add("hidden");
+      qBox2.classList.add("hidden");
+      qBox3.classList.add("hidden");
     } else {
-      if (curPart > 0) {
-        prevBox.classList.remove("hidden");
-        prevBox.innerHTML = `<div class="pref">${escapeHtml(it.referencia)} (parte ${curPart})</div><div class="ptext">${escapeHtml(textoParte(it, curPart-1))}</div>`;
-      } else if (curIdx > 0) {
-        const p = playlist[curIdx-1];
-        const t = textoParte(p, 0);
-        prevBox.classList.remove("hidden");
-        prevBox.innerHTML = `<div class="pref">${escapeHtml(p.referencia)}</div><div class="ptext">${escapeHtml(t.length>90 ? t.slice(0,90)+"…" : t)}</div>`;
-      } else prevBox.classList.add("hidden");
-
-      if (curPart < nP - 1) {
-        nextBox.classList.remove("hidden");
-        nextBox.innerHTML = `<div class="pref">${escapeHtml(it.referencia)} (parte ${curPart+2})</div><div class="ptext">${escapeHtml(textoParte(it, curPart+1))}</div>`;
-      } else if (curIdx < playlist.length-1) {
-        const n = playlist[curIdx+1];
-        const t = textoParte(n, 0);
-        nextBox.classList.remove("hidden");
-        nextBox.innerHTML = `<div class="pref">${escapeHtml(n.referencia)}</div><div class="ptext">${escapeHtml(t.length>90 ? t.slice(0,90)+"…" : t)}</div>`;
-      } else nextBox.classList.add("hidden");
+      calcularCola();
+      const pintarQ = (box, item) => {
+        if (!item) { box.classList.add("hidden"); return; }
+        const qit = playlist[item.idx];
+        const qnP = (item.idx === curIdx && partesInfo) ? partesInfo.count : rangesDe(qit).length;
+        const refQ = qit.referencia + (qnP > 1 ? ` (parte ${item.part+1})` : "");
+        const tq = textoParte(qit, item.part);
+        box.classList.remove("hidden");
+        box.innerHTML = `<div class="pref">${escapeHtml(refQ)}</div><div class="ptext">${escapeHtml(tq.length>110 ? tq.slice(0,110)+"…" : tq)}</div>`;
+      };
+      pintarQ(qBox2, colaProxima[0]);
+      pintarQ(qBox3, colaProxima[1]);
     }
 
     editVerseButton.disabled = false;
+    predicaAddButton.disabled = false;
   }
 
-  prevBox.addEventListener("click", () => {
+  function irAtras() {
     if (curIdx < 0) return;
     if (curPart > 0) proyectar(curIdx, curPart - 1);
     else if (curIdx > 0) proyectar(curIdx - 1, 0);
-  });
-  nextBox.addEventListener("click", () => {
+  }
+  function irAdelante() {
     if (curIdx < 0) return;
-    const nP = partesInfo ? partesInfo.count : 1;
-    if (curPart < nP - 1) proyectar(curIdx, curPart + 1);
-    else if (curIdx < playlist.length - 1) proyectar(curIdx + 1, 0);
+    calcularCola();
+    if (colaProxima.length) proyectar(colaProxima[0].idx, colaProxima[0].part);
+  }
+  qBox2.addEventListener("click", () => {
+    if (swipeHecho || !colaProxima[0]) return;
+    proyectar(colaProxima[0].idx, colaProxima[0].part);
+  });
+  qBox3.addEventListener("click", () => {
+    if (swipeHecho || !colaProxima[1]) return;
+    proyectar(colaProxima[1].idx, colaProxima[1].part);
+  });
+
+  // Deslizamiento vertical sobre la fila:
+  // hacia ARRIBA = siguiente parte / versículo siguiente · hacia ABAJO = atrás
+  preview.addEventListener("touchstart", (e) => {
+    if (modoResaltar || curIdx < 0) { touchY0 = null; return; }
+    touchX0 = e.touches[0].clientX;
+    touchY0 = e.touches[0].clientY;
+    swipeBloqueado = false;
+  }, { passive: true });
+  preview.addEventListener("touchmove", (e) => {
+    if (touchY0 === null) return;
+    const dy = e.touches[0].clientY - touchY0;
+    const dx = e.touches[0].clientX - touchX0;
+    if (!swipeBloqueado && Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) swipeBloqueado = true;
+    if (swipeBloqueado) e.preventDefault();
+  }, { passive: false });
+  preview.addEventListener("touchend", (e) => {
+    if (touchY0 === null) return;
+    const dx = e.changedTouches[0].clientX - touchX0;
+    const dy = e.changedTouches[0].clientY - touchY0;
+    touchX0 = touchY0 = null;
+    if (curIdx < 0 || Math.abs(dy) < 45 || Math.abs(dx) > 70) return;
+    swipeHecho = true;
+    setTimeout(() => { swipeHecho = false; }, 450);
+    if (dy < 0) irAdelante(); else irAtras();
   });
 
   editVerseButton.addEventListener("click", () => {
@@ -786,6 +872,150 @@
       }));
     }
   });
+
+  // ================= PREDICACIÓN =================
+  const MAX_PREDICA = 60;
+  function guardarPredica() {
+    try { localStorage.setItem("bibPredica", JSON.stringify(predicaItems)); } catch(e) {}
+  }
+  function mismoVersiculo(a, b) {
+    return Number(a.bookNumber) === Number(b.bookNumber) &&
+           Number(a.chapter) === Number(b.chapter) &&
+           Number(a.verse) === Number(b.verse);
+  }
+  function actualizarBadgePredica() {
+    if (!predicaBadge) return;
+    predicaBadge.textContent = predicaItems.length;
+    predicaBadge.classList.toggle("has", predicaItems.length > 0);
+  }
+  let toastTimer = null;
+  function toast(msg) {
+    const t = document.getElementById("toast");
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove("show"), 2000);
+  }
+  function refrescarAddBtns() {
+    if (enPredica) return;
+    document.querySelectorAll("#verseList .addbtn, #resultList .addbtn").forEach(b => {
+      const it = playlist[Number(b.dataset.i)];
+      const dentro = it && predicaItems.some(p => mismoVersiculo(p, it));
+      b.textContent = dentro ? "✓" : "➕";
+      b.classList.toggle("en-lista", !!dentro);
+      b.title = dentro ? "Ya está en la predicación" : "Agregar a la predicación";
+    });
+  }
+  function pintarPredica() {
+    predList.innerHTML = "";
+    predList.style.display = predicaItems.length ? "block" : "none";
+    predVacio.style.display = predicaItems.length ? "none" : "block";
+    predicaItems.forEach((p, i) => {
+      const div = document.createElement("div");
+      div.className = "predica-item";
+      div.dataset.i = i;
+      const s = seccionDe(p.bookNumber);
+      const meta = [s.name, p.version].filter(Boolean).join(" · ");
+      const num = document.createElement("span");
+      num.className = "porder";
+      num.textContent = i + 1;
+      const main = document.createElement("div");
+      main.className = "pmain";
+      main.innerHTML = `<div class="predref"><i class="dot" style="background:${s.color}"></i>${escapeHtml(p.bookName)} ${p.chapter}:${p.verse}</div>` +
+                       `<div class="predmeta">· ${escapeHtml(meta)}</div>`;
+      const del = document.createElement("button");
+      del.className = "delbtn";
+      del.textContent = "✕";
+      del.title = "Quitar de la lista";
+      del.addEventListener("click", (e) => { e.stopPropagation(); borrarPredica(i); });
+      div.appendChild(num);
+      div.appendChild(main);
+      div.appendChild(del);
+      div.addEventListener("click", () => proyectarPredica(i));
+      predList.appendChild(div);
+    });
+    actualizarBadgePredica();
+  }
+  function clonarPredica() {
+    return predicaItems.map(p => ({ ...p, words: p.words.map(w => ({ t: w.t, h: w.h || "" })) }));
+  }
+  function addToPredica(it) {
+    if (!it || !it.bookName) return;
+    if (predicaItems.some(p => mismoVersiculo(p, it))) { toast("Ese versículo ya está en la lista"); return; }
+    if (predicaItems.length >= MAX_PREDICA) { toast("La lista está llena (máximo " + MAX_PREDICA + " versículos)"); return; }
+    predicaItems.push({
+      referencia: it.referencia || (it.bookName + " " + it.chapter + ":" + it.verse),
+      version: it.version, bookName: it.bookName, bookNumber: it.bookNumber,
+      chapter: it.chapter, verse: it.verse,
+      words: (it.words || []).map(w => ({ t: w.t, h: w.h || "" }))
+    });
+    guardarPredica();
+    pintarPredica();
+    refrescarAddBtns();
+    toast("✅ " + it.bookName + " " + it.chapter + ":" + it.verse + " agregado (" + predicaItems.length + ")");
+  }
+  function borrarPredica(i) {
+    const p = predicaItems[i];
+    predicaItems.splice(i, 1);
+    guardarPredica();
+    pintarPredica();
+    refrescarAddBtns();
+    if (enPredica) {
+      playlist = clonarPredica();
+      if (curIdx === i) {
+        curIdx = -1; curPart = 0; partesInfo = null;
+        salirModoResaltar();
+        preview.style.display = "none";
+        editVerseButton.disabled = true; predicaAddButton.disabled = true;
+      } else if (curIdx > i) {
+        curIdx--;
+      }
+    }
+    marcarSeleccion();
+    if (p) toast("🗑️ " + p.bookName + " " + p.chapter + ":" + p.verse + " quitado");
+  }
+  function proyectarPredica(i) {
+    if (i < 0 || i >= predicaItems.length) return;
+    enPredica = true;
+    playlist = clonarPredica();
+    partesInfo = null;
+    activarTab("predica");
+    proyectar(i, 0);
+  }
+  async function restaurarCapitulo() {
+    if (!enPredica) return;
+    enPredica = false;
+    if (capActual != null && currentBookNumber != null) {
+      await cargarVersiculosCapitulo(capActual, false);
+    }
+    marcarSeleccion();
+  }
+  function restaurarBusqueda() {
+    enPredica = false;
+    if (playlistBusqueda.length) { playlist = playlistBusqueda; partesInfo = null; }
+    refrescarAddBtns();
+  }
+  vaciarPredicaBtn.addEventListener("click", () => {
+    if (!predicaItems.length) return;
+    if (!confirm("¿Vaciar toda la lista de predicación?")) return;
+    predicaItems = [];
+    guardarPredica();
+    pintarPredica();
+    refrescarAddBtns();
+    if (enPredica) {
+      enPredica = false; curIdx = -1; curPart = 0; partesInfo = null;
+      salirModoResaltar();
+      preview.style.display = "none";
+      editVerseButton.disabled = true; predicaAddButton.disabled = true;
+    }
+    marcarSeleccion();
+    toast("Lista de predicación vaciada");
+  });
+  predicaAddButton.addEventListener("click", () => {
+    if (curIdx >= 0 && playlist[curIdx]) addToPredica(playlist[curIdx]);
+  });
+  pintarPredica();
 
   // ================= LIBROS =================
   function guardarFavHist() {
@@ -954,6 +1184,12 @@
   async function elegirCapitulo(c, cell) {
     chapterGrid.querySelectorAll(".numcell").forEach(e => e.classList.remove("selected"));
     cell.classList.add("selected");
+    await cargarVersiculosCapitulo(c, true);
+    tabEstado("versiculo", true);
+    activarTab("versiculo");
+  }
+
+  async function cargarVersiculosCapitulo(c, forzarVista = true) {
     const r = await fetch(`./api/verses?version=${encodeURIComponent(versionSelect.value)}&book=${currentBookNumber}&chapter=${c}`);
     const verses = await r.json();
 
@@ -965,7 +1201,9 @@
       words: String(v.text).replace(/\s+/g," ").trim().split(" ").filter(Boolean).map(t => ({ t: t, h: "" }))
     }));
     partesInfo = null;
-    verGrilla();
+    enPredica = false;
+    capActual = c;
+    if (forzarVista) verGrilla();
 
     const maxV = Math.max(...verses.map(v => v.verse));
     verseGrid.innerHTML = "";
@@ -974,48 +1212,91 @@
       cellv.className = "numcell";
       cellv.dataset.v = n;
       cellv.textContent = n;
-      cellv.addEventListener("click", () => {
-        const idx = playlist.findIndex(it => it.verse === n);
-        if (idx < 0) return;
-        proyectar(idx, 0);
+      let pressTimer = null, longPress = false;
+      cellv.addEventListener("touchstart", () => {
+        longPress = false;
+        pressTimer = setTimeout(async () => {
+          longPress = true;
+          if (enPredica) await restaurarCapitulo();
+          const i2 = playlist.findIndex(it => it.verse === n);
+          if (i2 >= 0) addToPredica(playlist[i2]);
+        }, 550);
+      }, { passive: true });
+      cellv.addEventListener("touchend", () => clearTimeout(pressTimer));
+      cellv.addEventListener("touchmove", () => clearTimeout(pressTimer));
+      cellv.addEventListener("contextmenu", async (e) => {
+        e.preventDefault();
+        if (enPredica) await restaurarCapitulo();
+        const i2 = playlist.findIndex(it => it.verse === n);
+        if (i2 >= 0) addToPredica(playlist[i2]);
+      });
+      cellv.addEventListener("click", async () => {
+        if (longPress) { longPress = false; return; }
+        if (enPredica) await restaurarCapitulo();
+        const i2 = playlist.findIndex(it => it.verse === n);
+        if (i2 < 0) return;
+        proyectar(i2, 0);
       });
       verseGrid.appendChild(cellv);
     }
     pintarLista(verseList, "", false);
-    tabEstado("versiculo", true);
-    activarTab("versiculo");
   }
 
-  function pintarLista(container, marcarQ, conReferencia) {
+  function pintarLista(container, marcarQ, conReferencia, fuente) {
     container.innerHTML = "";
     playlist.forEach((it, i) => {
       const div = document.createElement("div");
       div.className = "verse" + (conReferencia ? " ref" : "");
       div.dataset.i = i;
-      const s = seccionDe(it.bookNumber);
-      const refHead = conReferencia
-        ? `<div class="search-ref"><i class="dot" style="background:${s.color}"></i>${abreviar(it.bookNumber)} ${it.chapter}:${it.verse} <span class="bn">· ${escapeHtml(it.bookName)} · ${s.name}</span></div>`
-        : "";
-      const texto = `<div class="vtext">${resaltarQ(it.words.map(w=>w.t).join(" "), marcarQ)}</div>`;
-      div.innerHTML = conReferencia
-        ? refHead + texto
-        : `<div class="vnum">${it.verse}</div>` + texto;
-      div.addEventListener("click", () => {
+      if (!conReferencia) {
+        const vn = document.createElement("div");
+        vn.className = "vnum";
+        vn.textContent = it.verse;
+        div.appendChild(vn);
+      }
+      const contenido = document.createElement("div");
+      contenido.className = "vcontenido";
+      if (conReferencia) {
+        const s = seccionDe(it.bookNumber);
+        contenido.innerHTML =
+          `<div class="search-ref"><i class="dot" style="background:${s.color}"></i>${abreviar(it.bookNumber)} ${it.chapter}:${it.verse} <span class="bn">· ${escapeHtml(it.bookName)} · ${s.name}</span></div>` +
+          `<div class="vtext">${resaltarQ(it.words.map(w=>w.t).join(" "), marcarQ)}</div>`;
+      } else {
+        contenido.innerHTML = `<div class="vtext">${resaltarQ(it.words.map(w=>w.t).join(" "), marcarQ)}</div>`;
+      }
+      div.appendChild(contenido);
+      const ab = document.createElement("button");
+      ab.className = "addbtn";
+      ab.dataset.i = i;
+      ab.textContent = "➕";
+      ab.title = "Agregar a la predicación";
+      ab.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        if (enPredica) await (fuente === "busq" ? restaurarBusqueda() : restaurarCapitulo());
+        addToPredica(playlist[Number(ab.dataset.i)]);
+      });
+      div.appendChild(ab);
+      div.addEventListener("click", async () => {
+        if (enPredica) await (fuente === "busq" ? restaurarBusqueda() : restaurarCapitulo());
         proyectar(i, 0);
         if (conReferencia) window.scrollTo(0, 0);
       });
       container.appendChild(div);
     });
+    refrescarAddBtns();
   }
 
   function marcarSeleccion() {
-    document.querySelectorAll(".verse").forEach(el => {
-      el.classList.toggle("selected", Number(el.dataset.i) === curIdx);
+    document.querySelectorAll("#verseList .verse, #resultList .verse").forEach(el => {
+      el.classList.toggle("selected", !enPredica && Number(el.dataset.i) === curIdx);
     });
     document.querySelectorAll("#verseGrid .numcell").forEach(el => {
-      el.classList.toggle("selected", curIdx >= 0 && playlist[curIdx] && Number(el.dataset.v) === playlist[curIdx].verse);
+      el.classList.toggle("selected", !enPredica && curIdx >= 0 && playlist[curIdx] && Number(el.dataset.v) === playlist[curIdx].verse);
     });
-    const sel = document.querySelector(".verse.selected");
+    document.querySelectorAll("#predList .predica-item").forEach(el => {
+      el.classList.toggle("selected", enPredica && Number(el.dataset.i) === curIdx);
+    });
+    const sel = document.querySelector(".verse.selected, .predica-item.selected");
     if (sel) sel.scrollIntoView({ block: "nearest" });
   }
 
@@ -1071,9 +1352,10 @@
       words: String(item.text).replace(/\s+/g," ").trim().split(" ").filter(Boolean).map(t => ({ t: t, h: "" }))
     }));
     partesInfo = null; qBusqueda = q;
+    playlistBusqueda = playlist; enPredica = false;
 
     searchInfoTexto.textContent = `“${q}”: ${res.length} versículo(s)`;
-    pintarLista(resultList, q, true);
+    pintarLista(resultList, q, true, "busq");
   }
   function salirBusqueda() {
     searchInfo.style.display = "none";
@@ -1092,6 +1374,9 @@
     salirModoResaltar();
     preview.style.display = "none";
     editVerseButton.disabled = true;
+    predicaAddButton.disabled = true;
+    enPredica = false;
+    pintarPredica();
     bookGrid.innerHTML = "";
     bookList.innerHTML = ""; bookList.classList.remove("visible");
     bookGrid.style.display = "grid";
