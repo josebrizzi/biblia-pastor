@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Biblia Sincronizada — Predicador</title>
+<title>Biblia Sincronizada — Pastor</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/icono.svg">
 <meta name="theme-color" content="#173f35">
@@ -13,9 +13,10 @@
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body { margin:0; font-family: Arial, sans-serif; background:#f4f1ea; color:#222; }
-  header { background:#173f35; color:#fff; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; }
+  header { background:#173f35; color:#fff; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; gap:10px; }
   header h1 { margin:0; font-size:20px; }
   header span { font-size:13px; opacity:.85; }
+  .hdr-iglesia { background:#ffd54f; color:#173f35; font-weight:bold; padding:6px 12px; border-radius:14px; border:none; font-size:14px; cursor:pointer; }
   .topbar { background:#fff; padding:10px 12px; display:flex; gap:10px; border-bottom:1px solid #e0ddd5; }
   .topbar select { flex:1; padding:10px; border:1px solid #ccc; border-radius:8px; font-size:16px; }
   .search-row { display:flex; gap:8px; padding:10px 12px; background:#fff; border-bottom:1px solid #e0ddd5; }
@@ -158,13 +159,44 @@
   }
   #clearButton { background:#ddd; color:#222; }
 
-  .status { padding:6px 12px 4px; font-size:13px; color:#666; display:flex; gap:12px; align-items:center; }</style>
+  .status { padding:6px 12px 4px; font-size:13px; color:#666; display:flex; gap:12px; align-items:center; }
+  /* ===== GESTOR DE IGLESIAS ===== */
+  #igOverlay {
+    position:fixed; inset:0; z-index:110; background:rgba(23,63,53,0.97);
+    overflow-y:auto; padding:20px;
+  }
+  #igOverlay.hidden { display:none; }
+  .ig-card { background:#fff; border-radius:16px; padding:24px 18px; max-width:440px; margin:20px auto; }
+  .ig-card p { color:#666; font-size:15px; margin:0 0 16px; }
+  .ig-item { display:flex; align-items:center; gap:8px; border:2px solid #e0ddd5; border-radius:12px; padding:12px; margin-bottom:8px; background:#fff; }
+  .ig-item.activo { border-color:#173f35; background:#eef4f1; }
+  .ig-nombre { flex:1; font-weight:bold; color:#173f35; font-size:17px; cursor:pointer; }
+  .ig-id { font-size:11px; color:#999; font-family:monospace; }
+  .ig-mini { border:none; background:#f0ede6; border-radius:8px; padding:8px 10px; cursor:pointer; font-size:15px; }
+  #igAgregar { width:100%; margin-top:6px; padding:13px; border:none; border-radius:10px;
+               background:#173f35; color:#fff; font-weight:bold; font-size:16px; cursor:pointer; }
+  #igAgregar:disabled { background:#ccc; cursor:not-allowed; }
+  #igCerrar { width:100%; margin-top:8px; padding:12px; border:none; border-radius:10px;
+              background:#ddd; font-weight:bold; cursor:pointer; }
+  #igCerrar.hidden { display:none; }
+</style>
 </head>
 <body>
 <header>
   <h1>📖 Biblia Sincronizada</h1>
-  <span>v24 · <span id="connectedCount">0</span> conect.</span>
+  <span><button id="btnIglesia" class="hdr-iglesia">⛪ <span id="salaTag">—</span> ▾</button></span>
 </header>
+
+<!-- ===== GESTOR DE IGLESIAS ===== -->
+<div id="igOverlay" class="hidden">
+  <div class="ig-card">
+    <div class="lock-title">⛪ Mis iglesias</div>
+    <p>Elegí dónde vas a predicar. El link de proyección de cada iglesia se copia para pasárselo a esa congregación.</p>
+    <div id="igLista"></div>
+    <button id="igAgregar">+ Agregar iglesia (máximo 7)</button>
+    <button id="igCerrar" class="hidden">✕ Seguir en esta iglesia</button>
+  </div>
+</div>
 
 <div class="topbar">
   <select id="version"><option value="">Versión…</option></select>
@@ -264,12 +296,17 @@
   const clearSearchButton = document.getElementById("clearSearchButton");
   const editVerseButton = document.getElementById("editVerseButton");
   const clearButton = document.getElementById("clearButton");
-  const wsStatus = document.getElementById("wsStatus");
-  const connectedCount = document.getElementById("connectedCount");  const predicaAddButton = document.getElementById("predicaAddButton");
+  const wsStatus = document.getElementById("wsStatus");  const predicaAddButton = document.getElementById("predicaAddButton");
   const vaciarPredicaBtn = document.getElementById("vaciarPredicaBtn");
   const predList = document.getElementById("predList");
   const predVacio = document.getElementById("predVacio");
   const predicaBadge = document.getElementById("predicaBadge");
+  const btnIglesia = document.getElementById("btnIglesia");
+  const salaTag = document.getElementById("salaTag");
+  const igOverlay = document.getElementById("igOverlay");
+  const igLista = document.getElementById("igLista");
+  const igAgregar = document.getElementById("igAgregar");
+  const igCerrar = document.getElementById("igCerrar");
 
   const UMBRAL_EST = 240;
   const COLORES = ["#ffff00", "#8aff8a", "#7cdcff", "#ff9ee8", "#ffc966"];
@@ -315,6 +352,135 @@
     if (Array.isArray(rawPred)) predicaItems = rawPred.filter(p => p && p.bookName && Array.isArray(p.words)).slice(0, 60);
   } catch(e) { predicaItems = []; }
 
+  // ============================================================
+  // GESTOR DE IGLESIAS DEL PASTOR (hasta 7, con nombre editable)
+  // ============================================================
+  let iglesias = [];
+  let iglesiaActual = "";
+  try { iglesias = JSON.parse(localStorage.getItem("pastorIglesias") || "[]"); } catch(e) { iglesias = []; }
+  try { iglesiaActual = localStorage.getItem("pastorIglesiaActual") || ""; } catch(e) {}
+
+  let salaActual = "";
+  const urlSala = new URLSearchParams(location.search).get("sala");
+  if (urlSala) {
+    // si le pasan un link directo con ?sala=xxx, se respeta
+    salaActual = urlSala.toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 20);
+    iglesiaActual = salaActual;
+  }
+
+  function guardarIglesias() {
+    try {
+      localStorage.setItem("pastorIglesias", JSON.stringify(iglesias));
+      localStorage.setItem("pastorIglesiaActual", iglesiaActual);
+    } catch(e) {}
+  }
+  function nombreIglesia(id) {
+    const g = iglesias.find(x => x.id === id);
+    return g ? g.nombre : (id || "—").toUpperCase();
+  }
+  function actualizarTagIglesia() {
+    salaTag.textContent = iglesiaActual ? nombreIglesia(iglesiaActual) : "—";
+  }
+
+  function abrirOverlayIglesias(primeraVez) {
+    pintarListaIglesias();
+    igAgregar.disabled = iglesias.length >= 7;
+    igCerrar.classList.toggle("hidden", primeraVez || !iglesiaActual);
+    igOverlay.classList.remove("hidden");
+  }
+  function pintarListaIglesias() {
+    igLista.innerHTML = "";
+    iglesias.forEach(g => {
+      const div = document.createElement("div");
+      div.className = "ig-item" + (g.id === iglesiaActual ? " activo" : "");
+      div.innerHTML = `
+        <div class="ig-nombre" title="Tocá para predicar aquí">${escapeHtml(g.nombre)}</div>
+        <div class="ig-id">${g.id}</div>
+        <button class="ig-mini" data-acc="link" title="Compartir / copiar link de proyección">📋</button>
+        <button class="ig-mini" data-acc="renom" title="Cambiar nombre">✏️</button>
+        <button class="ig-mini" data-acc="del" title="Eliminar">🗑️</button>`;
+      div.querySelector(".ig-nombre").addEventListener("click", () => elegirIglesia(g.id));
+      div.querySelector('[data-acc="link"]').addEventListener("click", (e) => { e.stopPropagation(); compartirLink(g); });
+      div.querySelector('[data-acc="renom"]').addEventListener("click", (e) => { e.stopPropagation(); renombrarIglesia(g.id); });
+      div.querySelector('[data-acc="del"]').addEventListener("click", (e) => { e.stopPropagation(); eliminarIglesia(g.id); });
+      igLista.appendChild(div);
+    });
+  }
+  function elegirIglesia(id) {
+    iglesiaActual = id;
+    guardarIglesias();
+    location.reload(); // reinicia limpio conectado a la iglesia elegida
+  }
+  async function compartirLink(g) {
+    const url = location.origin + "/proyeccion.html?sala=" + g.id;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: g.nombre, text: "Link de proyección de " + g.nombre, url: url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        alert("Link copiado. Enviáselo a esa iglesia:\n\n" + url);
+      }
+    } catch(e) {
+      prompt("Copiá este link y compartilo:", url);
+    }
+  }
+  function renombrarIglesia(id) {
+    const g = iglesias.find(x => x.id === id);
+    if (!g) return;
+    const nuevo = prompt("Nombre de la iglesia (esa palabra es la clave de la sala):", g.nombre);
+    if (nuevo && nuevo.trim()) {
+      g.nombre = nuevo.trim().slice(0, 40);
+      const eraActiva = (iglesiaActual === g.id);
+      g.id = idLibre(idDesdeNombre(g.nombre), g);
+      if (eraActiva) iglesiaActual = g.id;
+      guardarIglesias();
+      if (eraActiva) {
+        location.reload(); // reconecta con la sala que lleva el nombre nuevo
+      } else {
+        pintarListaIglesias();
+        actualizarTagIglesia();
+      }
+    }
+  }
+  function eliminarIglesia(id) {
+    if (!confirm("¿Eliminar esta iglesia de tu lista?")) return;
+    iglesias = iglesias.filter(x => x.id !== id);
+    if (iglesiaActual === id) {
+      iglesiaActual = iglesias.length ? iglesias[0].id : "";
+      guardarIglesias();
+      location.reload();
+      return;
+    }
+    guardarIglesias();
+    pintarListaIglesias();
+  }
+  // El nombre de la iglesia ES la clave: el id de la sala sale del nombre.
+  function idDesdeNombre(n) {
+    let id = String(n || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9_-]/g, "").slice(0, 20);
+    return id || "iglesia";
+  }
+  function idLibre(base, excluir) {
+    let cand = base, k = 2;
+    while (iglesias.some(x => x.id === cand && x !== excluir)) {
+      cand = base.slice(0, 18) + "-" + k; k++;
+    }
+    return cand;
+  }
+  igAgregar.addEventListener("click", () => {
+    if (iglesias.length >= 7) return;
+    const nombre = prompt("Nombre de la iglesia (esa palabra es la clave de la sala):", "");
+    if (!nombre || !nombre.trim()) return;
+    const nombreLimpio = nombre.trim().slice(0, 40);
+    const id = idLibre(idDesdeNombre(nombreLimpio), null);
+    iglesias.push({ id: id, nombre: nombreLimpio });
+    guardarIglesias();
+    pintarListaIglesias();
+    igAgregar.disabled = iglesias.length >= 7;
+  });
+  igCerrar.addEventListener("click", () => igOverlay.classList.add("hidden"));
+  btnIglesia.addEventListener("click", () => abrirOverlayIglesias(false));
+
   function escapeHtml(t) {
     return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
   }
@@ -331,6 +497,7 @@
     ws = new WebSocket(`${p}//${location.host}`);
     ws.addEventListener("open", () => {
       wsStatus.textContent = "Conectado";
+      ws.send(JSON.stringify({ type: "join", sala: salaActual }));
       try {
         const f = localStorage.getItem("adminFondo");
         if (f) enviarFondo(f);
@@ -341,7 +508,7 @@
     ws.addEventListener("message", (ev) => {
       try {
         const data = JSON.parse(ev.data);
-        if (data.type === "connected") { connectedCount.textContent = data.count; return; }
+        if (data.type === "connected") { document.getElementById("connectedCount").textContent = data.count; return; }
         if (data.type === "projection") {
           const d = data.data || {};
           if (d.type === "parts-info" && curIdx >= 0) {
@@ -825,7 +992,6 @@
       o.value = v; o.textContent = v;
       versionSelect.appendChild(o);
     });
-    // Preselecciona Reina-Valera 1960 por defecto y carga los libros automáticamente
     const defecto = vs.find(v => /1960/.test(v)) || vs[0];
     if (defecto) {
       versionSelect.value = defecto;
@@ -1119,8 +1285,21 @@
     if (versionSelect.value) cargarLibros();
   });
 
-  cargarVersiones();
-  connectWebSocket();
+  // ---------- ARRANQUE ----------
+  if (!iglesias.length) {
+    // Primera vez: pantalla para crear las iglesias (no conecta todavía)
+    actualizarTagIglesia();
+    abrirOverlayIglesias(true);
+  } else {
+    if (!iglesiaActual || !iglesias.find(g => g.id === iglesiaActual)) {
+      iglesiaActual = iglesias[0].id;
+      guardarIglesias();
+    }
+    if (!salaActual) salaActual = iglesiaActual;
+    actualizarTagIglesia();
+    cargarVersiones();
+    connectWebSocket();
+  }
 </script>
 </body>
 </html>
